@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Супер Гиорги">
+<meta name="theme-color" content="#10141c">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Супер Гиорги: Батуми</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #10141c; overflow: hidden; touch-action: none; }
+  body { display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+  canvas { display: block; image-rendering: pixelated; }
+  #touch {
+    position: fixed; left: 0; right: 0; bottom: 0; display: none; justify-content: space-between; align-items: flex-end;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); pointer-events: none;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  #touch .grp { display: flex; gap: 12px; pointer-events: auto; }
+  #touch button {
+    width: 68px; height: 68px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .6);
+    background: rgba(255, 255, 255, .2); color: #fff; font: bold 24px system-ui, sans-serif; touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #touch button.word { font-size: 15px; }
+  #touch button:active, #touch button.on { background: rgba(255, 255, 255, .45); }
+  #touch .mid button { width: 44px; height: 44px; font-size: 16px; }
+  #touch .mid button.off { opacity: .4; }
+  body.touch #touch { display: flex; }
+  /* Phone held upright: HUD strip and world on top (sized in resize()), a gamepad panel filling the rest. */
+  body.phone { align-items: flex-start; padding-top: env(safe-area-inset-top); }
+  body.touch.phone #touch {
+    --b: min(84px, calc((100vw - 64px) / 4));
+    display: grid; grid-template-columns: auto 1fr auto; align-content: center; row-gap: 10px;
+    top: calc(env(safe-area-inset-top) + var(--game-h, 0px)); padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+    background: #181d29; border-top: 3px solid #2a3246; box-sizing: border-box;
+  }
+  body.phone #touch button { width: var(--b); height: var(--b); font-size: calc(var(--b) * .38); background: rgba(255, 255, 255, .14); }
+  body.phone #touch button:active, body.phone #touch button.on { background: rgba(255, 255, 255, .4); }
+  body.phone #touch .mid { grid-column: 1; grid-row: 1; gap: 10px; }
+  body.phone #touch .mid button { width: 40px; height: 40px; font-size: 15px; }
+  body.phone #touch .dpad { grid-column: 1; grid-row: 2; }
+  body.phone #touch .act { grid-column: 3; grid-row: 1 / span 2; align-self: end; position: relative; width: calc(var(--b) * 2.1); height: calc(var(--b) * 1.55); }
+  body.phone #touch .act button { position: absolute; }
+  body.phone #touch .act .word { left: 0; bottom: 0; width: calc(var(--b) * .9); height: calc(var(--b) * .9); font-size: calc(var(--b) * .2); }
+  body.phone #touch .act .jump { right: 0; top: 0; width: calc(var(--b) * 1.15); height: calc(var(--b) * 1.15); font-size: calc(var(--b) * .42); background: rgba(255, 210, 63, .22); border-color: rgba(255, 210, 63, .8); }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Игра «Супер Гиорги: Батуми»"></canvas>
+<div id="touch">
+  <div class="grp dpad"><button data-dir="left" aria-label="Влево">◀</button><button data-dir="right" aria-label="Вправо">▶</button></div>
+  <div class="grp mid"><button data-act="pause" aria-label="Пауза">II</button><button data-act="mute" aria-label="Звук">♪</button><button id="fs" aria-label="Во весь экран">⛶</button></div>
+  <div class="grp act"><button data-act="run" class="word" aria-label="Бег">БЕГ</button><button data-act="jump" class="jump" aria-label="Прыжок">▲</button></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>

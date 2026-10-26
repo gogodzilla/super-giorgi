@@ -1,0 +1,9 @@
+{
+  "name": "Супер Гиорги: Батуми",
+  "short_name": "Супер Гиорги",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#10141c",
+  "theme_color": "#10141c"
+}
