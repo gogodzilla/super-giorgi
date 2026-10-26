@@ -2,7 +2,7 @@
 
 # Super Giorgi: Batumi
 
-**A parody pixel-art platformer on the streets of Batumi.**<br>
+**A pixel-art platformer on the streets of Batumi, in the spirit of Super Mario.**<br>
 Jump over Prius taxis, make friends with stray dogs, knock balconies out with your head,
 eat khachapuri and make it to Ali &amp; Nino on the seafront.
 
@@ -88,4 +88,4 @@ Made by [@gogodzilla](https://github.com/gogodzilla) in Batumi, built together w
 - **Code** is under the [MIT License](LICENSE).
 - **`music.mp3`** is the author's own recording, © Maxim Malets, all rights reserved ([`LICENSE-music.txt`](LICENSE-music.txt)). It isn't covered by the MIT License.
 
-This is a fan-made parody, not affiliated with or endorsed by Toyota, SPAR or anyone else whose name appears in the game.
+A fan-made game, not affiliated with or endorsed by Nintendo, Toyota, SPAR or anyone else whose name appears in the game.

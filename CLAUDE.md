@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-«Супер Гиорги: Батуми» (renamed from «Супер Марио» 26.10.2026 — the hero is Giorgi) — a parody Mario-style platformer set on the streets of Batumi: jump over Prius taxis,
+«Супер Гиорги: Батуми» (renamed from «Супер Марио» 26.10.2026 — the hero is Giorgi) — a pixel-art platformer in the spirit of Super Mario, set on the streets of Batumi (owner: don't call it a parody): jump over Prius taxis,
 stray dogs and cars parked on the sidewalk, knock balconies out with your head, eat khachapuri to grow,
 reach the Ali & Nino statue.
 
