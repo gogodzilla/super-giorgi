@@ -86,6 +86,6 @@ For console tinkering, `window.__mario` exposes the game state, the player, the 
 Made by [@gogodzilla](https://github.com/gogodzilla) in Batumi, built together with [Claude Code](https://claude.com/claude-code).
 
 - **Code** is under the [MIT License](LICENSE).
-- **`music.mp3`** is the author's own recording, © Maxim Malets, all rights reserved. It isn't covered by the MIT License.
+- **`music.mp3`** is the author's own recording, © Maxim Malets, all rights reserved ([`LICENSE-music.txt`](LICENSE-music.txt)). It isn't covered by the MIT License.
 
 This is a fan-made parody, not affiliated with or endorsed by Toyota, SPAR or anyone else whose name appears in the game.

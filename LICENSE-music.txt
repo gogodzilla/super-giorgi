@@ -1,0 +1,3 @@
+music.mp3 is not covered by the MIT License in LICENSE.
+
+© 2026 Maxim Malets. All rights reserved.

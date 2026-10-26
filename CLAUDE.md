@@ -125,7 +125,7 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
 ## Repo
 
 Public: https://github.com/gogodzilla/super-giorgi (MIT for the code; `music.mp3` is the owner's, all rights
-reserved — see `LICENSE`). `README.md` is the public face with screenshots in `docs/`; refresh them when the
+reserved — see `LICENSE-music.txt`). `README.md` is the public face with screenshots in `docs/`; refresh them when the
 look changes noticeably. Commits use the GitHub noreply address (set in the repo's local git config).
 
 ## Deploy
