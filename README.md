@@ -19,11 +19,17 @@ English · Русский · ქართული
 
 - **Prius taxis.** Third-generation Priuses with a taxi sign on the roof. They drive at you on the pavement, honk, and the roof makes a great trampoline.
 - **Delivery mopeds.** Couriers with a light-blue box on the rack, faster than the taxis.
+- **A sightseeing cart.** The boulevard's electric tourist cart, two benches of passengers, trundling along the pavement. The traffic gets harder as you go: the cart, then a Prius, then mopeds, then the scooter.
+- **An unhinged e-scooter.** A kid on a rental scooter, flat out, hopping off kerbs for no reason. Waits for you near the finish.
+- **Parked cars.** Sedans left on the pavement with their hazard lights blinking, and a patrol car with its light bar on. Look out for a terracotta pickup, too.
 - **Stray dogs.** Dogs in every coat, with yellow, red, blue or green ear tags. Some sleep, some patrol, and some wake up and chase you. They never hurt you and they never get hurt: land on one and it becomes your friend. A bump only knocks Giorgi back.
-- **Khrushchyovkas.** Five floors, a sixth one added later in different bricks (sometimes still half built), a greengrocer or a SPAR on the ground floor, and washing lines strung between the houses.
+- **Khrushchyovkas.** Five floors, a sixth one added later in different bricks (sometimes still half built), a greengrocer, a SPAR, the Belarusian Bulbaland, the Mtiuluri restaurant or a passage under a Camex sign on the ground floor, and washing lines strung between the houses.
 - **Balconies.** Headbutt them like Mario's bricks. Out fall coins, khachapuri, and the occasional slipper.
+- **Shipping containers.** Stacked into staircases, straight from the port.
 - **Burst sewers.** Holes in the pavement, plus ponds of sewage with a geyser. Don't fall in.
-- **The skyline.** Alphabet Tower, the Ferris wheel, Orbi City, the Sheraton and Batumi Tower in the background, the Neptune fountain on the way, and the statues of Ali and Nino waiting at the finish.
+- **Dog poop.** Left on the pavement here and there. Stepping in it does nothing but splatter.
+- **The skyline.** Alphabet Tower, the Ferris wheel, Orbi City, the Sheraton, Batumi Tower, the Marriott, the Courtyard and the White Magnolia in the background, the Neptune fountain, a birzha where the neighbourhood men play nardi and dominoes under a vine, and the old Wedding House ("the pig's head", since demolished, with a bride and groom outside) on the way, and the statues of Ali and Nino waiting at the finish.
+- **Tower cranes and airliners.** Batumi is always building, and planes keep coming in to land over the sea.
 - **Music.** An original tune in 6/8 inspired by the Acharuli dance, synthesized on the fly.
 
 <table>
@@ -35,6 +41,8 @@ English · Русский · ქართული
     <td><img src="docs/title-ka.png" alt="Title screen in Georgian"></td>
   </tr>
 </table>
+
+Every new game reshuffles the street: which vehicles come at you (easy ones first, the scooter last), how many dogs are out, what the balconies hold and where the poop is.
 
 ## Controls
 

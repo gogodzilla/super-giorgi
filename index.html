@@ -21,13 +21,13 @@
   }
   #touch .grp { display: flex; gap: 12px; pointer-events: auto; }
   #touch button {
-    width: 68px; height: 68px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .6);
-    background: rgba(255, 255, 255, .2); color: #fff; font: bold 24px system-ui, sans-serif; touch-action: none;
+    /* pixel-art faces drawn by game.js (--img / --img-on); the text is kept for screen readers only */
+    width: 68px; height: 68px; padding: 0; border: 0; border-radius: 0; color: transparent; font-size: 0;
+    background: var(--img) center / 100% 100% no-repeat; image-rendering: pixelated; touch-action: none;
     -webkit-tap-highlight-color: transparent;
   }
-  #touch button.word { font-size: 15px; }
-  #touch button:active, #touch button.on { background: rgba(255, 255, 255, .45); }
-  #touch .mid button { width: 44px; height: 44px; font-size: 16px; }
+  #touch button:active, #touch button.on { background-image: var(--img-on); }
+  #touch .mid button { width: 44px; height: 44px; }
   #touch .mid button.off { opacity: .4; }
   body.touch #touch { display: flex; }
   /* Phone held upright: HUD strip and world on top (sized in resize()), a gamepad panel filling the rest. */
@@ -38,15 +38,11 @@
     top: calc(env(safe-area-inset-top) + var(--game-h, 0px)); padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
     background: #181d29; border-top: 3px solid #2a3246; box-sizing: border-box;
   }
-  body.phone #touch button { width: var(--b); height: var(--b); font-size: calc(var(--b) * .38); background: rgba(255, 255, 255, .14); }
-  body.phone #touch button:active, body.phone #touch button.on { background: rgba(255, 255, 255, .4); }
+  body.phone #touch button { width: var(--b); height: var(--b); }
   body.phone #touch .mid { grid-column: 1; grid-row: 1; gap: 10px; }
-  body.phone #touch .mid button { width: 40px; height: 40px; font-size: 15px; }
+  body.phone #touch .mid button { width: 40px; height: 40px; }
   body.phone #touch .dpad { grid-column: 1; grid-row: 2; }
-  body.phone #touch .act { grid-column: 3; grid-row: 1 / span 2; align-self: end; position: relative; width: calc(var(--b) * 2.1); height: calc(var(--b) * 1.55); }
-  body.phone #touch .act button { position: absolute; }
-  body.phone #touch .act .word { left: 0; bottom: 0; width: calc(var(--b) * .9); height: calc(var(--b) * .9); font-size: calc(var(--b) * .2); }
-  body.phone #touch .act .jump { right: 0; top: 0; width: calc(var(--b) * 1.15); height: calc(var(--b) * 1.15); font-size: calc(var(--b) * .42); background: rgba(255, 210, 63, .22); border-color: rgba(255, 210, 63, .8); }
+  body.phone #touch .act { grid-column: 3; grid-row: 2; align-self: end; }
 </style>
 </head>
 <body>

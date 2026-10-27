@@ -11,7 +11,7 @@ const GROUND_Y = 12 * T;                    // top of the sidewalk
 const EMPTY = 0, GROUND = 1, BALC = 2, BALC_COIN = 3, BALC_KHACH = 4, USED = 5, CONCRETE = 6, PEBBLE = 7;
 const PHYS = { walk: 90, run: 150, acc: 520, accAir: 380, fric: 700, jumpV: 390, g: 2000, hold: 0.45, maxFall: 520 };
 const TIME_LIMIT = 300;
-const CHECKPOINT_X = 101 * T;
+const CHECKPOINT_X = 89 * T;                // respawn point: flat sidewalk, clear of pits, cars and the sewer at 99
 const FLAG_TOP = GROUND_Y - 50, FLAG_BOTTOM = GROUND_Y - 14;
 const FINISH_X = 206 * T;
 const STATUE_X = 210 * T;
@@ -43,9 +43,9 @@ const LANG = (() => {
 const STR = {
   ru: {
     lifeUp: '+1 ЖИЗНЬ', eww: 'ФУ!', slipper: 'тапок!', goodDog: 'хороший пёс ♥', jumpedOver: 'перепрыгнул! +100',
-    woof: 'ГАВ!', woofWoof: 'ГАВ! ГАВ!', delivery: 'ДОСТАВКА!', honk: 'БИП-БИП!', order: 'ЗАКАЗ! +100',
+    woof: 'ГАВ!', woofWoof: 'ГАВ! ГАВ!', delivery: 'ДОСТАВКА!', tour: 'ЭКСКУРСИЯ!', scooter: 'ПОСТОРОНИСЬ!', zoom: 'ВЖУХ! +100', honk: 'БИП-БИП!', order: 'ЗАКАЗ! +100',
     beep: 'БИП! +100', khachapuri: 'ХАЧАПУРИ!', checkpoint: 'ЧЕКПОИНТ',
-    hud: ['ГИОРГИ', 'ЛАРИ', 'ВРЕМЯ', 'ЖИЗНИ'], soundOff: 'звук выкл (M)',
+    hud: ['ГИОРГИ', 'ЛАРИ', 'ВРЕМЯ', 'ЖИЗНИ'], soundOff: 'звук выкл (M)', god: 'режим бога',
     tap: 'Коснись экрана', press: 'Enter или пробел', start: ' — старт', retry: ' — заново', again: ' — ещё раз',
     title: 'СУПЕР ГИОРГИ', city: 'Б А Т У М И',
     intro: 'Перепрыгивай Prius-ы и бездомных собак, выбивай головой балконы, ешь хачапури.',
@@ -61,9 +61,9 @@ const STR = {
   },
   en: {
     lifeUp: '+1 LIFE', eww: 'EWW!', slipper: 'slipper!', goodDog: 'good dog ♥', jumpedOver: 'jumped over! +100',
-    woof: 'WOOF!', woofWoof: 'WOOF! WOOF!', delivery: 'DELIVERY!', honk: 'BEEP-BEEP!', order: 'ORDER! +100',
+    woof: 'WOOF!', woofWoof: 'WOOF! WOOF!', delivery: 'DELIVERY!', tour: 'CITY TOUR!', scooter: 'OUTTA MY WAY!', zoom: 'ZOOM! +100', honk: 'BEEP-BEEP!', order: 'ORDER! +100',
     beep: 'BEEP! +100', khachapuri: 'KHACHAPURI!', checkpoint: 'CHECKPOINT',
-    hud: ['GIORGI', 'LARI', 'TIME', 'LIVES'], soundOff: 'sound off (M)',
+    hud: ['GIORGI', 'LARI', 'TIME', 'LIVES'], soundOff: 'sound off (M)', god: 'god mode',
     tap: 'Tap the screen', press: 'Enter or Space', start: ' — start', retry: ' — try again', again: ' — play again',
     title: 'SUPER GIORGI', city: 'B A T U M I',
     intro: 'Jump over Priuses and stray dogs, knock out balconies with your head, eat khachapuri.',
@@ -79,9 +79,9 @@ const STR = {
   },
   ka: {
     lifeUp: '+1 სიცოცხლე', eww: 'ფუ!', slipper: 'ჩუსტი!', goodDog: 'კარგი ძაღლი ♥', jumpedOver: 'გადაახტი! +100',
-    woof: 'ჰავ!', woofWoof: 'ჰავ! ჰავ!', delivery: 'მიწოდება!', honk: 'ბიპ-ბიპ!', order: 'შეკვეთა! +100',
+    woof: 'ჰავ!', woofWoof: 'ჰავ! ჰავ!', delivery: 'მიწოდება!', tour: 'ექსკურსია!', scooter: 'გზა მომეცით!', zoom: 'ვჟუხ! +100', honk: 'ბიპ-ბიპ!', order: 'შეკვეთა! +100',
     beep: 'ბიპ! +100', khachapuri: 'ხაჭაპური!', checkpoint: 'ჩეკპოინტი',
-    hud: ['გიორგი', 'ლარი', 'დრო', 'სიცოცხლე'], soundOff: 'ხმა გამორთულია (M)',
+    hud: ['გიორგი', 'ლარი', 'დრო', 'სიცოცხლე'], soundOff: 'ხმა გამორთულია (M)', god: 'ღმერთის რეჟიმი',
     tap: 'შეეხე ეკრანს', press: 'Enter ან Space', start: ' — დაწყება', retry: ' — თავიდან', again: ' — კიდევ ერთხელ',
     title: 'სუპერ გიორგი', city: 'ბ ა თ უ მ ი',
     intro: 'გადაახტი პრიუსებს და ქუჩის ძაღლებს, თავით დაამტვრიე აივნები, ჭამე ხაჭაპური.',
@@ -304,8 +304,11 @@ const sfx = {
   bark: () => { tone(520, 0.07, 'sawtooth', 300, 0.16); tone(560, 0.08, 'sawtooth', 280, 0.16, 0.12); },
   honk: () => { for (const w of [0, 0.24]) { tone(415, 0.18, 'square', null, 0.1, w); tone(523, 0.18, 'square', null, 0.08, w); } },
   beep: () => { tone(415, 0.1, 'square', null, 0.1); tone(523, 0.1, 'square', null, 0.08); },
+  scooter: () => { tone(520, 0.5, 'sawtooth', 980, 0.05); tone(990, 0.05, 'square', null, 0.06, 0.15); },
+  cart: () => { tone(660, 0.08, 'triangle', null, 0.07); tone(660, 0.08, 'triangle', null, 0.07, 0.14); },
   moped: () => { tone(140, 0.45, 'sawtooth', 210, 0.07); tone(880, 0.06, 'square', null, 0.08, 0.1); tone(880, 0.06, 'square', null, 0.08, 0.2); },
   splash: () => { noise(0.4, 0.35); tone(220, 0.3, 'sine', 70, 0.25); },
+  squish: () => { noise(0.12, 0.22); tone(170, 0.14, 'sine', 55, 0.22); },
   sprout: () => tone(300, 0.3, 'triangle', 900, 0.2),
   power: () => arp([523, 659, 784, 1047, 1319], 0.07),
   hurt: () => tone(600, 0.3, 'square', 150, 0.2),
@@ -414,6 +417,8 @@ const pair = (rows, pal) => { const r = sprite(rows, pal); return { r, l: mirror
 // Giorgi wears a black cap, a white T-shirt and black jeans. To roll back to the original red cap and
 // blue overalls, set OUTFIT to 'classic' (or open the game with ?outfit=classic to compare).
 const OUTFIT = new URLSearchParams(location.search).get('outfit') === 'classic' ? 'classic' : 'giorgi';
+// ?god=1 for play-testing: nothing kills Giorgi, holes and sewers toss him back up, the clock never runs out.
+const GOD = new URLSearchParams(location.search).has('god');
 const HERO_OUTFITS = {
   giorgi: {
     pal: { C: '#18181c', c: '#3a3a44', S: '#f8b890', K: '#1c1010', H: '#1c1814', W: '#f4f4ef', w: '#c3c9d2', B: '#25272f', O: '#4a2c14' },
@@ -449,6 +454,38 @@ const HERO_OUTFITS = {
   },
 };
 const { pal: HERO_PAL, top: HERO_TOP } = HERO_OUTFITS[OUTFIT];
+// The favicon and home-screen icon: Giorgi face-on, cap and moustache (owner), drawn here like everything else.
+const HERO_FACE = [
+  '...............',
+  '.....CCCCC.....',
+  '....CCCCCCC....',
+  '...CCCCCCCCC...',
+  '...ccccccccc...',
+  '...HSSSSSSSH...',
+  '...SSKSSSKSS...',
+  '..SSSSSSSSSSS..',
+  '...SSSSSSSSS...',
+  '...SKKKKKKKS...',
+  '...SKKSSSKKS...',
+  '....SSSSSSS....',
+  '.....SSSSS.....',
+  '..WWWWSSSWWWW..',
+  '.WWWWWWWWWWWWW.',
+  'WWWWWWWWWWWWWWW',
+];
+function heroIcon(size, bg) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const k = c.getContext('2d'), z = Math.floor(size / HERO_FACE.length);
+  const ox = Math.floor((size - z * HERO_FACE[0].length) / 2), oy = Math.floor((size - z * HERO_FACE.length) / 2);
+  if (bg) { k.fillStyle = bg; k.fillRect(0, 0, size, size); }
+  HERO_FACE.forEach((r, j) => [...r].forEach((ch, i) => {
+    if (ch !== '.') { k.fillStyle = HERO_PAL[ch]; k.fillRect(ox + i * z, oy + j * z, z, z); }
+  }));
+  return c.toDataURL();
+}
+for (const [rel, size, bg] of [['icon', 64, null], ['apple-touch-icon', 180, '#6ab8ea']]) {
+  const l = document.createElement('link'); l.rel = rel; l.href = heroIcon(size, bg); document.head.appendChild(l);
+}
 const HERO_LEGS = {
   stand: ['...BBBBBB...', '...BBBBBB...', '...BB..BB...', '..OOO..OOO..', '..OOO..OOO..'],
   walk1: ['..BBBBBBB...', '.BBB...BBB..', '.BB.....BB..', 'OOO.....OOO.', 'OO.......OO.'],
@@ -478,6 +515,29 @@ const DOG_SLEEP = [
   '.dDDDDDDDDDDDDDK',
   'dd.dd.dd...dd.dd',
 ];
+// Resting poses: lying with the head up, and sitting with the tail on the ground.
+const DOG_LIE = [
+  '...........dd...',
+  '..........dYDD..',
+  '..........DDKDD.',
+  '.........DDDDDDK',
+  'd..DDDDDDDDDDP..',
+  '.dDDDDDDDDDDD...',
+  '..dDDDDDDDDDDDDd',
+];
+const DOG_SIT = [
+  '.........dd.....',
+  '........dYDD....',
+  '........DDKDD...',
+  '.......DDDDDDK..',
+  '.......DDDDDP...',
+  '......DDDDDD....',
+  '.....DDDDDDD....',
+  '....DDDDD.DD....',
+  '...DDDDDd.DD....',
+  '...DDDDDd.DD....',
+  'ddddDDDdd.dd....',
+];
 // Batumi strays come in every colour; Y is the ear tag of a vaccinated street dog (see DOG_TAGS).
 // Plain coats only, no patches of any colour (owner's call).
 const DOG_COATS = [
@@ -497,6 +557,8 @@ function dogSprites(coat, tag) {
     b: pair(DOG_BODY.concat(DOG_LEGS_B), pal),
     wag: pair(DOG_WAG_TOP.concat(DOG_BODY.slice(4), DOG_LEGS_A), pal),
     sleep: pair(DOG_SLEEP, pal),
+    lie: pair(DOG_LIE, pal),
+    sit: pair(DOG_SIT, pal),
   };
 }
 const DOGS = DOG_COATS.map(coat => DOG_TAGS.map(tag => dogSprites(coat, tag)));
@@ -556,17 +618,29 @@ const SKYLINE = layer(960, k => {
   };
   [[0, 40, 70], [46, 32, 104], [84, 28, 58], [250, 42, 118], [298, 30, 78], [470, 36, 92],
     [512, 26, 128], [690, 40, 72], [738, 32, 108], [850, 44, 88], [900, 30, 62]].forEach(b => block(...b));
-  // Alphabet Tower: a thin core wrapped in a double helix, a ring on top
+  // Alphabet Tower, after photos: a wide white lattice cylinder (31 m across, 130 m tall) around a dark lift
+  // core, two helical bands carrying the letters wound three times round it, a mirror-glass sphere on top
   let x = 190;
-  k.fillStyle = col; k.fillRect(x - 3, base - 150, 6, 150);
-  for (let y = base - 140; y < base - 4; y++) {
-    const o = Math.round(Math.sin(y * 0.16) * 8);
-    k.fillStyle = dark; k.fillRect(x + o - 1, y, 2, 1);
-    k.fillStyle = '#c3d3e0'; k.fillRect(x - o - 1, y, 2, 1);
-  }
-  k.fillStyle = col; k.beginPath(); k.arc(x, base - 156, 9, 0, Math.PI * 2); k.fill();
-  k.fillStyle = win; k.fillRect(x - 9, base - 157, 18, 2);
-  k.fillStyle = col; k.fillRect(x - 1, base - 175, 2, 12);
+  const r = 18, top = base - 140, turn = 3 * 2 * Math.PI / 140;
+  const band = front => {
+    for (let y = top + 2; y < base - 2; y++) for (const ph of [0, Math.PI]) {
+      const a = (base - y) * turn + ph;
+      if ((Math.cos(a) > 0) !== front) continue;
+      const bx = Math.round(x + Math.sin(a) * (r - 1));
+      k.fillStyle = front ? '#e4ecf3' : dark; k.fillRect(bx - 1, y, 3, 3);
+      if (front && (base - y) % 11 === 0 && Math.abs(Math.sin(a)) < 0.8) { k.fillStyle = '#8ea6bb'; k.fillRect(bx, y + 1, 1, 2); }   // a letter
+    }
+  };
+  k.fillStyle = '#7f95ab'; k.beginPath(); k.arc(x, top, r, 0, Math.PI * 2); k.fill();   // the sphere
+  k.fillStyle = '#94aabf'; k.beginPath(); k.arc(x - 5, top - 6, 9, 0, Math.PI * 2); k.fill();
+  k.fillStyle = '#c9d8e5'; k.fillRect(x - 9, top - 12, 4, 2); k.fillRect(x - 11, top - 9, 2, 3);
+  k.fillStyle = '#8ea6bb'; k.fillRect(x - r, top - 1, 2 * r, 2);                        // its equator ring
+  k.fillStyle = dark; k.fillRect(x - 4, top, 8, base - top);                             // the lift core
+  band(false);
+  k.fillStyle = col;                                                                     // the lattice
+  for (let i = -r; i <= r; i += 6) k.fillRect(x + i - (i === r ? 1 : 0), top, 1, base - top);
+  for (let y = top + 12; y < base; y += 12) k.fillRect(x - r, y, 2 * r, 1);
+  band(true);
   // Ferris wheel on the boulevard
   x = 400;
   const cy = base - 46, R = 36;
@@ -580,11 +654,28 @@ const SKYLINE = layer(960, k => {
   }
   k.lineWidth = 2;
   k.beginPath(); k.moveTo(x - 20, base); k.lineTo(x, cy); k.lineTo(x + 20, base); k.stroke();
-  // a construction crane, naturally
-  x = 820;
-  k.fillStyle = '#c9a24a';
-  k.fillRect(x, base - 130, 3, 130); k.fillRect(x - 20, base - 130, 70, 3);
-  k.fillRect(x - 22, base - 128, 8, 6); k.fillRect(x + 44, base - 127, 1, 30); k.fillRect(x + 42, base - 97, 5, 4);
+  // tower cranes, naturally — Batumi is always building: a lattice mast, the jib one way, a counterweight the other
+  const crane = (x, h, jib, dir, color, hook) => {
+    const y = base - h;
+    k.fillStyle = color;
+    k.fillRect(x, y, 1, h); k.fillRect(x + 4, y, 1, h);                                  // the mast
+    for (let i = y + 2; i < base - 4; i += 6) { k.fillRect(x, i, 5, 1); k.fillRect(x + 1, i + 2, 1, 1); k.fillRect(x + 2, i + 3, 1, 1); k.fillRect(x + 3, i + 4, 1, 1); }
+    k.fillRect(x - 1, y - 2, 7, 5);                                                      // the cab
+    const jx = dir > 0 ? x + 5 : x - jib, cx = dir > 0 ? x - 22 : x + 6;
+    k.fillRect(jx, y - 3, jib, 2); k.fillRect(cx, y - 3, 22, 2);                         // jib and counter-jib
+    k.fillRect(dir > 0 ? cx : cx + 14, y - 1, 8, 5);                                     // the counterweight
+    k.fillRect(x + 1, y - 13, 3, 10);                                                    // the peak with its ties
+    k.lineWidth = 1; k.strokeStyle = color;
+    k.beginPath(); k.moveTo(x + 2.5, y - 13); k.lineTo(dir > 0 ? x + 5 + jib * 0.7 : x - jib * 0.7, y - 3); k.stroke();
+    k.beginPath(); k.moveTo(x + 2.5, y - 13); k.lineTo(dir > 0 ? cx + 2 : cx + 20, y - 3); k.stroke();
+    const hx = dir > 0 ? x + 5 + hook : x - hook;
+    k.fillRect(hx, y - 1, 1, 24 + (hook % 17)); k.fillRect(hx - 2, y + 23 + (hook % 17), 5, 3);   // cable and hook
+  };
+  crane(132, 112, 46, 1, '#c9a24a', 30);
+  crane(336, 146, 58, -1, '#c98a5a', 40);
+  crane(560, 124, 52, 1, '#c4ccd4', 22);
+  crane(652, 98, 40, -1, '#c9a24a', 18);
+  crane(820, 130, 48, 1, '#c9a24a', 40);
 });
 // A palm: a curved tapering trunk with growth rings and a crown of feathery, drooping fronds.
 function palm(k, x, h, seed) {
@@ -643,67 +734,177 @@ function sheraton(k, x, base) {
   k.fillRect(x + 15, y - 24, 2, 18);
   k.beginPath(); k.arc(x + 16, y - 11, 3, 0, Math.PI * 2); k.fill();
 }
-// Orbi City: blue glass slabs whose roofs sweep up like sails, a white tower behind them.
+// Orbi City, after the owner's photo: three identical overlapping slabs in a row (owner), each roof a straight slope rising
+// to the right under a blue cornice with ORBI CITY; a pale striped face on the left and deep blue glass swept up from
+// the foot to the high corner along a concave curve; a cream podium with arches joins them.
 function orbi(k, x, base) {
-  k.fillStyle = '#e6ecf1'; k.fillRect(x + 64, base - 150, 26, 150);
-  k.fillStyle = '#b7c5d2';
-  for (let y = base - 146; y < base - 2; y += 4) k.fillRect(x + 66, y, 22, 1);
-  for (const [dx, w, hl, hr] of [[0, 34, 112, 146], [36, 34, 126, 170], [76, 30, 96, 124]]) {
-    const x0 = x + dx;
-    const roof = () => { k.moveTo(x0, base - hl); k.quadraticCurveTo(x0 + w * 0.55, base - hl, x0 + w, base - hr); };
-    const sail = () => { k.beginPath(); k.moveTo(x0, base); k.lineTo(x0, base - hl); roof(); k.lineTo(x0 + w, base); k.closePath(); };
-    const glass = k.createLinearGradient(x0, 0, x0 + w, 0);
-    glass.addColorStop(0, '#86b9ee'); glass.addColorStop(0.12, '#3b7dcc'); glass.addColorStop(1, '#1f4f8c');
-    sail(); k.fillStyle = glass; k.fill();
-    k.save(); sail(); k.clip();
-    k.fillStyle = '#5b93d6';
-    for (let y = base - 3; y > base - hr; y -= 4) k.fillRect(x0 + 3, y, w - 3, 1);
+  for (const dx of [60, 30, 0]) {   // overlapping: drawn right to left, so the right one is at the back
+    const w = 44, hl = 82, hr = 134, g0 = 0.15, cx = 0.7, cy = 0.45;
+    const x0 = x + dx, x1 = x0 + w;
+    const slab = () => { k.beginPath(); k.moveTo(x0, base); k.lineTo(x0, base - hl); k.lineTo(x1, base - hr); k.lineTo(x1, base); k.closePath(); };
+    const glass = () => { k.beginPath(); k.moveTo(x0 + w * g0, base); k.quadraticCurveTo(x0 + w * cx, base - hr * cy, x1 - 2, base - hr + 5); k.lineTo(x1, base - hr); k.lineTo(x1, base); k.closePath(); };
+    slab(); k.fillStyle = '#c3d1e2'; k.fill();
+    k.save(); slab(); k.clip();
+    k.fillStyle = '#93abc8'; for (let y = base - 2; y > base - hr; y -= 3) k.fillRect(x0, y, w, 1);   // the floors
+    glass(); k.fillStyle = '#2459b4'; k.fill();
+    k.save(); glass(); k.clip();
+    k.fillStyle = '#3b70c8'; for (let y = base - 2; y > base - hr; y -= 3) k.fillRect(x0, y, w, 1);
     k.restore();
-    k.strokeStyle = '#cfe6ff'; k.lineWidth = 1.2;
-    k.beginPath(); roof(); k.stroke();
+    k.fillStyle = '#1d4aa6';                                                       // the cornice along the roof
+    k.beginPath(); k.moveTo(x0, base - hl); k.lineTo(x1, base - hr); k.lineTo(x1, base - hr + 7); k.lineTo(x0, base - hl + 7); k.fill();
+    k.restore();
+    k.fillStyle = '#7d93b0'; k.fillRect(x0, base - hl, 1, hl);                     // its left edge against the one behind
+    k.fillStyle = '#f2f6fb';                                                       // ORBI CITY on it
+    for (let i = 0; i < 6; i++) { const u = 0.45 + i * 0.07; k.fillRect(x0 + w * u, base - hl - (hr - hl) * u + 3, 2, 1); }
   }
+  k.fillStyle = '#e9dcc4'; k.fillRect(x - 6, base - 14, 116, 14);                 // the podium
+  k.fillStyle = '#c4b394';
+  for (let i = x - 2; i < x + 100; i += 12) { k.beginPath(); k.moveTo(i, base); k.lineTo(i, base - 7); k.arc(i + 5, base - 7, 5, Math.PI, 0); k.lineTo(i + 10, base); k.fill(); }
 }
-// Batumi Tower, the university with a Ferris wheel built into the corner of its facade.
+// White Magnolia: the huge, long-unfinished residential block on the seafront, after the owner's photo from
+// the sea. A wide symmetric white facade: a lower part of pilastered bays with tall arched openings under a
+// cornice, terraced glazed floors stepping back above it, and a projecting centre with a giant arch flanked
+// by paired columns, the courtyard houses showing through it.
+function magnolia(k, x, base) {
+  const w = 148, low = 50, white = '#f1efe9', shade = '#d6d3cb', glass = '#a9b6c1', win = '#7d8995';
+  for (let i = 0; i < 4; i++) {                                                     // terraced upper floors
+    const inset = 4 + i * 7, y = base - low - (i + 1) * 7;
+    k.fillStyle = white; k.fillRect(x + inset, y, w - 2 * inset, 7);
+    k.fillStyle = glass; k.fillRect(x + inset + 1, y + 2, w - 2 * inset - 2, 4);
+    k.fillStyle = white; for (let j = x + inset + 3; j < x + w - inset - 1; j += 3) k.fillRect(j, y + 2, 1, 4);
+    k.fillStyle = shade; k.fillRect(x + inset, y + 6, w - 2 * inset, 1);
+  }
+  for (const tx of [x + 6, x + w - 26]) {                                           // the taller corner blocks
+    k.fillStyle = white; k.fillRect(tx, base - low - 34, 20, 34);
+    k.fillStyle = win; for (let j = 0; j < 4; j++) for (let q = 0; q < 4; q++) k.fillRect(tx + 2 + q * 5, base - low - 31 + j * 7, 2, 3);
+  }
+  k.fillStyle = white; k.fillRect(x, base - low, w, low);                           // lower part
+  k.fillStyle = '#ffffff'; k.fillRect(x - 1, base - low - 2, w + 2, 2);             // cornice
+  k.fillStyle = shade; k.fillRect(x, base - low, w, 1);
+  for (let bx = x + 2; bx < x + w - 6; bx += 12) {                                  // bays between pilasters
+    k.fillStyle = shade; k.fillRect(bx + 10, base - low + 2, 1, low - 2);
+    k.fillStyle = '#ffffff'; k.fillRect(bx + 8, base - low + 1, 2, low - 1);
+    k.fillStyle = glass;                                                            // tall arched opening
+    k.beginPath(); k.moveTo(bx + 1, base - 26); k.lineTo(bx + 1, base - 42); k.arc(bx + 4, base - 42, 3, Math.PI, 0); k.lineTo(bx + 7, base - 26); k.fill();
+    k.fillStyle = white; for (let y = base - 40; y < base - 26; y += 4) k.fillRect(bx + 1, y, 6, 1);   // balcony rails
+    k.fillStyle = win; for (let y = base - 22; y < base - 2; y += 6) { k.fillRect(bx + 1, y, 2, 3); k.fillRect(bx + 5, y, 2, 3); }
+  }
+  const cx = x + w / 2;                                                             // projecting centre
+  k.fillStyle = white; k.fillRect(cx - 20, base - low - 8, 40, low + 8);
+  k.fillStyle = '#ffffff'; k.fillRect(cx - 21, base - low - 10, 42, 2);
+  k.fillStyle = shade; k.fillRect(cx + 19, base - low - 8, 1, low + 8);
+  k.fillStyle = win; for (let j = 0; j < 2; j++) for (const dx of [-17, -13, 11, 15]) k.fillRect(cx + dx, base - low - 5 + j * 6, 2, 3);
+  k.fillStyle = '#b9b5ab'; k.beginPath(); k.moveTo(cx - 13, base); k.lineTo(cx - 13, base - 36); k.arc(cx, base - 36, 13, Math.PI, 0); k.lineTo(cx + 13, base); k.fill();
+  k.fillStyle = '#cdc9bf'; k.beginPath(); k.moveTo(cx - 11, base); k.lineTo(cx - 11, base - 36); k.arc(cx, base - 36, 11, Math.PI, 0); k.lineTo(cx + 11, base); k.fill();
+  k.fillStyle = win; for (let y = base - 40; y < base - 2; y += 6) for (let q = -8; q < 8; q += 4) k.fillRect(cx + q, y, 2, 3);   // courtyard houses
+  k.fillStyle = '#ffffff';
+  for (const dx of [-17, -14, 12, 15]) k.fillRect(cx + dx, base - 30, 2, 30);       // paired columns
+  k.fillRect(cx - 18, base - 31, 7, 1); k.fillRect(cx + 11, base - 31, 7, 1);
+}
+// Courtyard by Marriott, after the owner's photo: the whole tower is a tall white blunt oval (owner), cut by the
+// ground a little below its middle so it narrows towards the foot, banded with close horizontal stripes, with
+// a tall oval of blue glass left of centre and the name along the left slope of the crown.
+function courtyard(k, x, base) {
+  const w = 56, h = 124, oy = h * 0.6, cy = base - h + oy;
+  const oval = (cx, cy, rx, ry, n) => {   // a superellipse: an oval with a blunter top than an ellipse
+    k.beginPath();
+    for (let i = 0; i <= 64; i++) {
+      const t = i / 64 * Math.PI * 2, c = Math.cos(t), s = Math.sin(t);
+      k.lineTo(cx + rx * Math.sign(c) * Math.abs(c) ** (2 / n), cy + ry * Math.sign(s) * Math.abs(s) ** (2 / n));
+    }
+    k.closePath();
+  };
+  const shape = () => oval(x + w / 2, cy, w / 2, oy, 2.6);
+  shape(); k.fillStyle = '#f4f4f1'; k.fill();
+  k.save(); shape(); k.clip();
+  k.fillStyle = '#e1e3e6'; k.fillRect(x + w * 0.76, base - h, w * 0.24, h);          // the side turning away
+  k.fillStyle = '#b8bdc3'; for (let y = base - 2; y > base - h; y -= 3) k.fillRect(x, y, w, 1);   // the bands
+  k.restore();
+  const ex = x + w * 0.38, rx = w * 0.18, ry = h * 0.4, ey = base - h * 0.42;        // the glass oval
+  k.fillStyle = '#5d6670'; oval(ex, ey, rx + 1.3, ry + 1.3, 2.3); k.fill();
+  k.fillStyle = '#4f7fc0'; oval(ex, ey, rx, ry, 2.3); k.fill();
+  k.save(); oval(ex, ey, rx, ry, 2.3); k.clip();
+  for (let y = ey - ry; y < ey + ry; y += 3) {
+    for (let i = ex - rx; i < ex + rx; i += 3) {
+      const hh = hash(Math.round(i * 3 + y), 71) % 6;
+      k.fillStyle = hh === 0 ? '#9cc0ea' : hh === 1 ? '#34598e' : '#4f7fc0';
+      k.fillRect(i, y, 2, 2);
+    }
+  }
+  k.restore();
+  k.fillStyle = '#cfd2d4'; k.fillRect(x + 4, base - 4, w - 8, 4);                    // podium
+}
+// Batumi Tower (the Technological University), after the owner's photo: a slender white tower slashed with
+// dark slits, blue glass at the foot cut on a slant with a white ribbon, a blue-violet band, a golden Ferris
+// wheel set into the upper facade, and a stepped crown with a needle spire.
 function batumiTower(k, x, base) {
-  k.fillStyle = '#c8d0d8'; k.fillRect(x - 8, base - 20, 52, 20);
-  k.fillStyle = '#8fa7bf'; k.fillRect(x, base - 152, 34, 132);
-  k.fillStyle = '#aec2d6';
-  for (let i = x + 3; i < x + 34; i += 5) k.fillRect(i, base - 150, 1, 130);
-  k.fillStyle = '#7690aa'; k.fillRect(x + 30, base - 152, 4, 132);
-  k.fillStyle = '#8fa7bf';
-  k.beginPath(); k.moveTo(x, base - 152); k.lineTo(x + 17, base - 184); k.lineTo(x + 34, base - 152); k.fill();
-  const cx = x + 30, cy = base - 118, R = 16;
-  k.strokeStyle = '#f4f6f8'; k.lineWidth = 2;
-  k.beginPath(); k.arc(cx, cy, R, 0, Math.PI * 2); k.stroke();
-  k.lineWidth = 1.1;
+  const w = 28, top = base - 128, white = '#f2f4f6', slit = '#36557f', glass = '#2f5f93';
+  k.fillStyle = '#c8d0d8'; k.fillRect(x - 10, base - 8, w + 20, 8);                // the low annex at its foot
+  k.fillStyle = white; k.fillRect(x, top, w, base - top);
+  k.fillStyle = slit;                                                              // dark vertical slits of varying length
+  for (let i = 0; i < 9; i++) for (let y = top + 3 + hash(i, 7) % 9; y < base - 30; y += 14 + hash(i, y) % 8) {
+    k.fillRect(x + 2 + i * 3, y, 1, 4 + hash(y, i) % 7);
+  }
+  k.fillStyle = '#dfe3e8'; k.fillRect(x + w - 3, top, 3, base - top);              // the shaded side
+  k.fillStyle = glass;                                                             // blue glass at the bottom, cut on a slant
+  k.beginPath(); k.moveTo(x, base); k.lineTo(x, base - 48); k.lineTo(x + w, base - 30); k.lineTo(x + w, base); k.fill();
+  k.fillStyle = '#4a7bb0'; for (let y = base - 44; y < base; y += 4) k.fillRect(x, y, w, 1);
+  k.strokeStyle = white; k.lineWidth = 1.5;                                        // the white ribbon running down the glass
+  k.beginPath(); k.moveTo(x + 2, base - 46); k.lineTo(x + w - 2, base); k.stroke();
+  k.fillStyle = '#5d66cf'; k.fillRect(x, base - 76, w, 6);                         // the blue-violet band
+  k.fillStyle = '#8890e6'; k.fillRect(x, base - 76, w, 1);
+  k.fillStyle = white;                                                             // crown and spire
+  k.beginPath(); k.moveTo(x, top); k.lineTo(x + 9, top - 24); k.lineTo(x + 19, top - 24); k.lineTo(x + w, top); k.fill();
+  k.fillStyle = '#c9ced6'; k.beginPath(); k.moveTo(x + 4, top); k.lineTo(x + 10, top - 24); k.lineTo(x + 11, top - 24); k.lineTo(x + 6, top); k.fill();
+  k.fillStyle = white; k.fillRect(x + 11, top - 38, 6, 14); k.fillRect(x + 12, top - 62, 4, 24);
+  k.fillStyle = '#dfe3e8'; k.fillRect(x + 15, top - 62, 1, 38);
+  const cx = x + 9, cy = top + 24, R = 9;                                          // the golden Ferris wheel in the facade
+  k.fillStyle = '#b8861e'; k.beginPath(); k.arc(cx, cy, R + 1, 0, Math.PI * 2); k.fill();
+  k.fillStyle = '#e9b937'; k.beginPath(); k.arc(cx, cy, R - 1, 0, Math.PI * 2); k.fill();
+  k.strokeStyle = '#a87518'; k.lineWidth = 1;
   for (let i = 0; i < 8; i++) {
     const a = i * Math.PI / 4;
     k.beginPath(); k.moveTo(cx, cy); k.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); k.stroke();
-    k.fillStyle = ['#e8483a', '#ffd23f', '#3d6fd0', '#7ac27a'][i % 4];
-    k.fillRect(Math.round(cx + Math.cos(a) * R) - 2, Math.round(cy + Math.sin(a) * R), 4, 3);
   }
+  k.fillStyle = '#ffe07a';
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + 0.39; k.fillRect(Math.round(cx + Math.cos(a) * R) - 1.5, Math.round(cy + Math.sin(a) * R) - 1.5, 3, 3); }
+  k.fillStyle = '#7a5410'; k.fillRect(cx - 1, cy - 1, 2, 2);
 }
-// Alliance Privilege (Marriott): a tall elliptical tower of dark glass in a white diagrid, a wave at its foot.
+// Alliance Privilege / Marriott, after the owner's photo: the whole tower is a tall oval of cream vertical
+// fins, and its narrow rounded end, a smaller oval of white diagrid over dark glass, sits inside it on the
+// left, sharing the outline. At its foot the oval narrows over a glass lobby, and a white ribbon dips in a U
+// and rises into a low arched annex on the right.
 function marriott(k, x, base) {
-  const cx = x + 14, cy = base - 92, rx = 14, ry = 90;
-  // the wave-shaped podium, behind the tower's foot
-  k.fillStyle = '#eef2f5';
-  k.beginPath(); k.moveTo(x + 18, base); k.bezierCurveTo(x + 24, base - 34, x + 50, base - 34, x + 64, base); k.fill();
-  k.strokeStyle = '#2c4868'; k.lineWidth = 2.2;
-  k.beginPath(); k.moveTo(x + 26, base); k.bezierCurveTo(x + 30, base - 22, x + 48, base - 22, x + 57, base); k.stroke();
+  const cream = '#efe7da', rib = '#d3c8b6', glass = '#2c4868';
+  k.fillStyle = glass; k.fillRect(x + 12, base - 44, 36, 44);                      // the glass lobby
+  const annex = () => { k.beginPath(); k.moveTo(x + 46, base); k.lineTo(x + 46, base - 26); k.bezierCurveTo(x + 46, base - 63, x + 74, base - 63, x + 74, base - 26); k.lineTo(x + 74, base); k.closePath(); };
+  annex(); k.fillStyle = cream; k.fill();
+  k.save(); annex(); k.clip();
+  k.fillStyle = rib; for (let i = x + 47; i < x + 74; i += 2) k.fillRect(i, base - 62, 1, 62);
+  k.fillStyle = glass; k.beginPath(); k.moveTo(x + 48, base); k.lineTo(x + 48, base - 30); k.bezierCurveTo(x + 49, base - 44, x + 58, base - 44, x + 59, base - 30); k.lineTo(x + 59, base); k.fill();
+  k.restore();
+  const tower = () => { k.beginPath(); k.ellipse(x + 23, base - 93, 23, 93, 0, 0, Math.PI * 2); };   // the outer oval
+  tower(); k.fillStyle = cream; k.fill();
+  k.save(); tower(); k.clip();
+  k.fillStyle = rib; for (let i = x + 1; i < x + 46; i += 2) k.fillRect(i, base - 186, 1, 186);   // vertical fins
+  k.restore();
+  k.strokeStyle = '#f6f1e8'; k.lineWidth = 2;                                      // the ribbon: down in a U, up into the annex
+  k.beginPath(); k.moveTo(x + 40, base - 46); k.bezierCurveTo(x + 40, base - 4, x + 47, base - 4, x + 47, base - 28); k.stroke();
+  const cx = x + 11, cy = base - 90, rx = 11, ry = 90;                              // the diagrid oval inside it
   const shell = () => { k.beginPath(); k.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); };
-  shell(); k.fillStyle = '#2c4868'; k.fill();
+  shell(); k.fillStyle = glass; k.fill();
   k.save(); shell(); k.clip();
-  k.fillStyle = '#3d5f84'; k.fillRect(cx - rx, cy - ry, rx * 0.7, ry * 2);   // sky reflection
   k.strokeStyle = '#eef2f5'; k.lineWidth = 1.1;
   k.beginPath();
-  for (let s = -260; s < 120; s += 8) {   // diagrid
+  for (let s = -260; s < 120; s += 10) {   // diagrid
     k.moveTo(cx + s, base); k.lineTo(cx + s + 64, base - 192);
     k.moveTo(cx - s, base); k.lineTo(cx - s - 64, base - 192);
   }
   k.stroke();
   k.restore();
-  shell(); k.lineWidth = 1.6; k.stroke();
+  shell(); k.strokeStyle = '#f6f1e8'; k.lineWidth = 1.6; k.stroke();
+  k.fillStyle = '#d8283a'; k.fillRect(x + 25, base - 176, 3, 3);                   // the sign on the crown
+  k.fillStyle = '#ffffff'; k.fillRect(x + 29, base - 175, 10, 2);
 }
 // Each landmark sits where it shows through a gap between the khrushchyovkas: a gap centred at world x
 // is mid-screen when it lines up with layer x = 0.42 * x + 0.58 * BASE_W / 2 (see LANDMARK_FACTOR);
@@ -711,9 +912,11 @@ function marriott(k, x, base) {
 const LANDMARK_FACTOR = 0.42;
 const LANDMARKS = layer(1500, k => {
   sheraton(k, 280, 194);       // gap at tiles 21–33
-  orbi(k, 607, 194);           // gap at tiles 71–90
+  courtyard(k, 469, 194);      // gap at tiles 52–62
+  orbi(k, 608, 194);           // gap at tiles 71–90
   batumiTower(k, 920, 194);    // gap at tiles 118–129
   marriott(k, 1034, 194);      // gap at tiles 136–146
+  magnolia(k, 1297, 194);      // gap at tiles 179–196, near the end
 });
 const PALMS = layer(512, (k, w) => {
   k.fillStyle = '#4f8a55'; k.fillRect(0, 185, w, 9);
@@ -744,26 +947,55 @@ const PRIUS_COLORS = [
   ['#e9ecef', '#b3bac2', '#ffffff'],   // pearl white
   ['#8e98a3', '#5f6873', '#c9d0d8'],   // grey
   ['#a3b5c7', '#6c7f93', '#dbe6f1'],   // blue-silver
+  ['#b8352a', '#7d1f18', '#e8766a'],   // red
+  ['#2f5a9a', '#1d3a68', '#7aa0d6'],   // blue
+  ['#3a3d42', '#1f2124', '#767c85'],   // black
+  ['#c9b48a', '#93805c', '#efe3c4'],   // champagne
+  ['#5f8a5a', '#3d5e3a', '#a2c79c'],   // green
 ];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+// Every new game reshuffles the street (owner): vehicles, dogs, what the balconies hold, the poop. The generator
+// is seeded per game (game.seed), so a death rebuilds the same street and a tricky spot can be learnt.
+const seeded = s => () => {   // mulberry32
+  s = (s + 0x6D2B79F5) | 0;
+  let t = Math.imul(s ^ (s >>> 15), 1 | s);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+let lrand = Math.random;   // the level's generator, reset by buildLevel()
+const lpick = a => a[Math.floor(lrand() * a.length)];
+const newSeed = () => Math.floor(Math.random() * 2 ** 32);
 
 // kind: 'side' — parked along the street; 'front' / 'rear' — parked across it, nose or boot towards us.
-function makeCar(x, i, kind = 'side') {
-  const y = GROUND_Y - 20, color = CAR_COLORS[(i * 3 + 1) % CAR_COLORS.length], phase = i * 0.37;
-  if (kind === 'side') return { kind, x, y, w: 46, h: 20, color, phase, face: hash(x, 7) % 2 ? 1 : -1, rects: [{ x, y: y + 9, w: 46, h: 11 }, { x: x + 8, y: y + 2, w: 30, h: 7 }] };
-  return { kind, x, y, w: 22, h: 20, color, phase, rects: [{ x, y: y + 9, w: 22, h: 11 }, { x: x + 3, y: y + 2, w: 16, h: 7 }] };
+// police: a Georgian patrol car (white, a black stripe with POLICE along the side, light bar) instead of a plain sedan.
+// Easter egg: a terracotta pickup parked on the beach past the finish, its bed full of watermelons and mandarins.
+const makePickup = x => ({ kind: 'pickup', x, y: GROUND_Y - 20, w: 50, h: 20, face: 1, rects: [{ x, y: GROUND_Y - 12, w: 50, h: 12 }, { x: x + 18, y: GROUND_Y - 18, w: 24, h: 6 }] });
+function makeCar(x, i, kind = 'side', police = false) {
+  const y = GROUND_Y - 20, color = police ? '#f2f2ee' : CAR_COLORS[(i * 3 + 1) % CAR_COLORS.length], phase = i * 0.37;
+  if (kind === 'side') return { kind, x, y, w: 46, h: 20, color, phase, police, face: hash(x, 7) % 2 ? 1 : -1, rects: [{ x, y: y + 9, w: 46, h: 11 }, { x: x + 8, y: y + 2, w: 30, h: 7 }] };
+  return { kind, x, y, w: 22, h: 20, color, phase, police, rects: [{ x, y: y + 9, w: 22, h: 11 }, { x: x + 3, y: y + 2, w: 16, h: 7 }] };
 }
-const makeDog = (x, mode, row, coat, tag) => ({ x, coat, tag, safeX: x, y: row * T - 10, w: 14, h: 10, vx: 0, vy: 0, dir: -1, mode, t: Math.random(), active: false, onGround: false, grace: 0, barkT: 1 });
-const makeTaxi = (x, i) => {
-  const [body, shade, hi] = PRIUS_COLORS[i % PRIUS_COLORS.length];
+const DOG_REST = ['sleep', 'sleep', 'lie', 'sit'];   // a resting dog is asleep, lying with its head up or sitting
+const makeDog = (x, mode, row, coat, tag) => ({ x, coat, tag, safeX: x, pose: DOG_REST[Math.floor(Math.random() * DOG_REST.length)], sitT: 0, nextSit: rand(3, 8), poseT: 0, y: row * T - 10, w: 14, h: 10, vx: 0, vy: 0, dir: -1, mode, t: Math.random(), active: false, onGround: false, grace: 0, barkT: 1 });
+const makeTaxi = x => {   // every Prius gets a random paint each time the level is built (owner)
+  const [body, shade, hi] = lpick(PRIUS_COLORS);
   return { kind: 'prius', x, y: GROUND_Y - 18, w: 44, h: 18, vx: 0, vy: 0, dir: -1, active: false, onGround: false, body, shade, hi };
 };
 // Food-delivery moped: rides with the taxis, faster, a light-blue box on the rear rack.
-const MOPED_COLORS = ['#e8e8e8', '#d8281c', '#2b2e33', '#3f7fd8'];
-const makeMoped = (x, i) => ({ kind: 'moped', x, y: GROUND_Y - 22, w: 26, h: 22, vx: 0, vy: 0, dir: -1, active: false, onGround: false, color: MOPED_COLORS[i % MOPED_COLORS.length] });
+const MOPED_COLORS = ['#e8e8e8', '#d8281c', '#2b2e33', '#3f7fd8', '#f2c12e', '#2f8f4e', '#e86a1c'];
+const makeMoped = x => ({ kind: 'moped', x, y: GROUND_Y - 22, w: 26, h: 22, vx: 0, vy: 0, dir: -1, active: false, onGround: false, color: lpick(MOPED_COLORS) });
+// The unhinged e-scooter (owner): a kid in a hoodie standing on a rental scooter, flat out, speeding up and
+// slowing down at random and hopping off the kerb now and then. Same taxi logic, same stomp and side hit.
+// An electric sightseeing cart from the boulevard (owner): an open frame with two benches of people, a woman
+// in a black hijab on the back one. Slow, but it drives the same way as a Prius and is stomped the same way.
+const makeCart = x => ({ kind: 'cart', x, y: GROUND_Y - 25, w: 31, h: 25, vx: 0, vy: 0, dir: -1, active: false, onGround: false });
+const HOODIES = ['#e8344a', '#2fb37a', '#f2c12e', '#8a4fd0', '#ff7a1a'];
+const makeScooter = x => ({ kind: 'scooter', x, y: GROUND_Y - 24, w: 16, h: 24, vx: 0, vy: 0, dir: -1, active: false, onGround: false, hoodie: lpick(HOODIES), phase: lrand() * 6 });
 
 function buildLevel() {
+  lrand = seeded(game.seed);
   const tiles = Array.from({ length: ROWS }, () => new Uint8Array(COLS));
-  const L = { tiles, cars: [], solids: [], dogs: [], taxis: [], coins: [], items: [], pits: [], buildings: [], ropes: [], fountains: [], doors: new Set() };
+  const L = { tiles, cars: [], solids: [], dogs: [], taxis: [], coins: [], items: [], pits: [], buildings: [], ropes: [], fountains: [], poops: [], doors: new Set() };
   for (let c = 0; c < COLS; c++) tiles[12][c] = tiles[13][c] = c >= 214 ? (c >= SEA_COL ? EMPTY : PEBBLE) : GROUND;
 
   const pit = (x, w) => {
@@ -771,7 +1003,11 @@ function buildLevel() {
     L.pits.push({ x: x * T, w: w * T });
   };
   const CH = { B: BALC, '?': BALC_COIN, K: BALC_KHACH, '#': CONCRETE };
-  const row = (x, y, s) => [...s].forEach((ch, i) => { if (CH[ch]) tiles[y][x + i] = CH[ch]; });
+  const row = (x, y, s) => {   // a row keeps its length and its khachapuri; which balcony holds what is shuffled
+    const a = [...s].map(ch => ch !== 'K' && ch !== '#' && lrand() < 0.25 ? (ch === 'B' ? '?' : 'B') : ch);
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(lrand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    a.forEach((ch, i) => { if (CH[ch]) tiles[y][x + i] = CH[ch]; });
+  };
   const stairs = (x, hs) => hs.forEach((h, i) => { for (let k = 0; k < h; k++) tiles[11 - k][x + i] = CONCRETE; });
   const coins = (x, y, n, arc = 0) => {
     for (let i = 0; i < n; i++) {
@@ -779,15 +1015,34 @@ function buildLevel() {
       L.coins.push({ x: (x + i) * T + 4, y: y * T + 3 - dy, taken: false });
     }
   };
-  const car = x => L.cars.push(makeCar(x * T, L.cars.length));
-  const across = (x, n) => {
-    for (let i = 0; i < n; i++) L.cars.push(makeCar(x * T + i * 25, L.cars.length, hash(x, i) % 2 ? 'front' : 'rear'));
+  const car = (x, police = false) => L.cars.push(makeCar(x * T, L.cars.length, 'side', police));
+  const across = (x, n, police = -1) => {   // police: index of the patrol car in the row, if any
+    for (let i = 0; i < n; i++) {
+      const c = makeCar(x * T + i * 25, L.cars.length, i === police || hash(x, i) % 2 ? 'front' : 'rear', i === police);
+      if (police >= 0 && !c.police && c.color === '#d9d9d4') c.color = '#2f68a8';   // no white car next to the patrol car
+      L.cars.push(c);
+    }
   };
-  const dog = (x, mode = 'sleep', r = 12) => L.dogs.push(makeDog(x * T, mode, r, (L.dogs.length * 5) % DOG_COATS.length, hash(x, 3) % DOG_TAGS.length));
-  const taxi = x => L.taxis.push(makeTaxi(x * T, L.taxis.length));
-  const moped = x => L.taxis.push(makeMoped(x * T, L.taxis.length));   // mopeds share the taxi logic
+  const dogAt = (x, mode = 'sleep', r = 12) => L.dogs.push(makeDog(x * T, mode, r, (L.dogs.length * 5) % DOG_COATS.length, hash(x, 3) % DOG_TAGS.length));
+  const buddies = [];
+  const dog = (x, mode, r) => {   // a spot gets no dog now and then, sometimes a second one asleep next to it
+    if (lrand() < 0.25) return;
+    dogAt(x, mode, r);
+    if (!r && lrand() < 0.3) buddies.push(x + 2);
+  };
+  const rides = [];
+  const ride = x => rides.push(x);   // a stretch of sidewalk with one vehicle on it, picked at the end
+  // flat sidewalk to put something down on: no hole or stairs over it, no parked car, off the respawn points
+  const flat = x => x > 6 && x < 197 && [x - 1, x, x + 1].every(c => tiles[12][c] === GROUND && tiles[11][c] === EMPTY) &&
+    Math.abs(x * T - CHECKPOINT_X) > 2 * T && (x * T < BIRZHA_X - T || x * T > BIRZHA_X + 4 * T) && !L.cars.some(c => c.rects.some(q => q.x < (x + 2) * T && q.x + q.w > (x - 1) * T));
+  const taxi = x => L.taxis.push(makeTaxi(x * T));
+  const moped = x => L.taxis.push(makeMoped(x * T));       // mopeds and the scooter share the taxi logic
+  const scooter = x => L.taxis.push(makeScooter(x * T));
+  const cart = x => L.taxis.push(makeCart(x * T));
   // A burst sewer: a pit full of sewage with a geyser in it. You sink on touching it.
   const sewer = (x, w) => { pit(x, w); L.pits[L.pits.length - 1].sewer = true; };
+  // Dog poop on the sidewalk: step in it and it splatters. Pure decoration, no effect on the game.
+  const poop = x => L.poops.push({ x: x * T + 5, squashed: false });
 
   // Balconies only on rows 8 and 5: those are the floor lines of floors 3 and 5 (see FLOOR).
   // warm-up
@@ -795,7 +1050,7 @@ function buildLevel() {
   row(15, 8, 'B?BKB');
   row(17, 5, '?');
   dog(20); dog(24);
-  across(27, 3);
+  across(27, 3, 1);
   dog(31);
   coins(32, 9, 3);
   row(35, 8, 'BB?BB');
@@ -805,11 +1060,13 @@ function buildLevel() {
   row(47, 8, 'B?B');
   // cars parked on the sidewalk, a dog asleep between them
   car(53); dog(56); car(57);
-  // first Prius on the long flat stretch
+  // traffic: one vehicle per stretch of sidewalk (owner: a moped and a taxi together is too hard early on); which
+  // one is random, but they get harder along the street — cart, Prius, moped, scooter (owner); see the end
+  // the first stretch long enough for traffic
   row(64, 8, 'BBBBBB');
   row(66, 5, '?K?');
   dog(61); dog(70, 'patrol');
-  taxi(76); moped(71);
+  ride(76);
   stairs(78, [1, 2, 3, 4]); pit(82, 2); stairs(84, [4, 3, 2, 1]);
   coins(88, 10, 3);
   row(92, 8, 'B?B?B');
@@ -821,26 +1078,39 @@ function buildLevel() {
   row(108, 8, 'B?B');
   row(112, 5, 'BBKBB');
   dog(116); dog(118);
-  taxi(122); moped(112);
+  ride(122);
   sewer(126, 3);
   coins(125, 8, 5, 2);
   row(131, 8, 'BKB');
   dog(134); dog(136);
-  car(139); across(143, 2);
+  car(139, true); across(143, 2);
   row(148, 8, '??');
   dog(147);
   coins(150, 6, 4);
   L.fountains.push({ x: 156 * T + 8 });   // Neptune, as in front of the drama theatre
-  taxi(158); moped(150);
+  ride(158);
   pit(160, 2);
   row(163, 8, 'BBB');
   dog(166, 'patrol');
   row(171, 8, 'B?B?B?B');
   coins(176, 9, 4);
   dog(174); dog(184, 'patrol');
-  across(179, 3);
-  taxi(188); moped(191); taxi(194);
+  ride(177);
+  across(179, 3, 1);
+  ride(191);
   stairs(197, [1, 2, 3, 4, 5, 6, 7, 8]);
+  L.cars.push(makePickup(215 * T));   // the easter egg
+
+  // the traffic: a random ramp, so the easy ones come first — position along the street plus a tile of noise
+  const RIDES = [cart, taxi, moped, scooter];
+  rides.map((x, i) => clamp(Math.round(i / (rides.length - 1) * 3 + lrand() * 2 - 1), 0, 3))
+    .sort((a, b) => a - b).forEach((k, i) => RIDES[k](rides[i]));
+  for (const x of buddies) if (flat(x) && !L.dogs.some(d => Math.abs(d.x - x * T) < 2 * T)) dogAt(x);
+  // just a few piles (owner), scattered on flat sidewalk, well apart
+  for (let n = 0, tries = 0; n < 4 && tries < 200; tries++) {
+    const x = 8 + Math.floor(lrand() * 188);
+    if (flat(x) && L.poops.every(p => Math.abs(p.x - x * T) > 12 * T)) { poop(x); n++; }
+  }
 
   buildBuildings(L);
   for (const c of L.cars) L.solids.push(...c.rects);
@@ -909,9 +1179,12 @@ function makeBuilding(x0, x1, n, L) {
   k.fillStyle = 'rgba(0,0,0,0.25)'; k.fillRect(0, ROOF_Y, w, 2);
   k.fillStyle = '#9a948a'; k.fillRect(0, GROUND_Y - 5, w, 5);
   // ground-floor shops, clear of the entrances (offsets 1, 5, 9): a greengrocer two columns wide or a
-  // SPAR three columns wide, each in about a third of the houses
-  const kind = n % 3, spar = kind === 1 && x1 - x0 >= 5;
-  const shop = (kind === 0 && x1 - x0 >= 4) || spar ? 2 : -1, shopW = spar ? 3 : 2;
+  // SPAR three columns wide, each in about a third of the houses; the one long house left without a shop
+  // gets the Mtiuluri restaurant, seven columns wide (it takes the middle entrance's place)
+  const kind = n % 3, spar = kind === 1 && x1 - x0 >= 5, resto = kind === 2 && x1 - x0 >= 10;
+  const bulba = spar && n === 1;   // the first SPAR's place goes to the Belarusian shop (owner)
+  const arch = n === 2;            // the first house with nothing downstairs: a passage under a Camex sign at its right end (owner)
+  const shop = arch ? x1 - x0 - 1 : (kind === 0 && x1 - x0 >= 4) || spar || resto ? 2 : -1, shopW = resto ? 7 : bulba ? 4 : spar ? 3 : 2;
   for (let f = 0; f < FLOORS; f++) {
     const fy = GROUND_Y - (f + 1) * FLOOR, fb = fy + FLOOR, balcRow = fb % T === 0 ? fb / T - 1 : -1;
     for (let col = x0; col <= x1; col++) {
@@ -928,7 +1201,7 @@ function makeBuilding(x0, x1, n, L) {
       }
     }
   }
-  if (spar) sparShop(k, shop * T); else if (shop >= 0) vegShop(k, shop * T, n);
+  if (arch) camexArch(k, shop * T); else if (resto) restoShop(k, shop * T); else if (bulba) bulbaShop(k, shop * T); else if (spar) sparShop(k, shop * T); else if (shop >= 0) vegShop(k, shop * T, n);
   addonFloor(k, w, n);
   return { x0, x1, top, canvas: c };
 }
@@ -958,6 +1231,106 @@ function sparShop(k, x) {
   k.fillStyle = '#d9d9d9'; k.fillRect(x + 21, gy + 3, 1, 3); k.fillRect(x + 25, gy + 3, 1, 3);
   k.fillStyle = SPAR_RED; k.fillRect(x, GROUND_Y - 5, w, 2);
   k.fillStyle = SPAR_GREEN; k.fillRect(x, GROUND_Y - 3, w, 1);
+}
+// BULBALAND, the Belarusian shop in Batumi, after the owner's photo, 64px wide: a white fascia with a small BULBALAND
+// in red embroidered letters, a red band edged with white vyshyvanka ornament (the trilingual sign), then a
+// curtained window, a white pillar with the red Bulba / Charka / Shkvarka icons, the glass door over granite
+// steps and a window with a blue poster.
+// A rectangular passage through the ground floor into the courtyard — dark, with the green yard at its end —
+// and over it a white Camex sign (the parcel service) in its blue wide flat letters.
+const CAMEX_WORD = [['####', '#...', '####'], ['.##.', '#..#', '#..#'], ['#####', '#.#.#', '#.#.#'], ['####', '###.', '####'], ['#..#', '.##.', '#..#']];
+function camexArch(k, x) {
+  const fy = GROUND_Y - FLOOR, w = 32, cx = x + w / 2, top = fy + 9;
+  k.fillStyle = '#cfc8bb'; k.fillRect(x + 3, top, w - 6, GROUND_Y - top);           // the frame
+  k.fillStyle = '#2a2622'; k.fillRect(x + 4, top + 1, w - 8, GROUND_Y - top - 1);   // the passage
+  k.fillStyle = '#6f8f5a'; k.fillRect(cx - 5, top + 8, 10, GROUND_Y - top - 8);     // the yard at the far end
+  k.fillStyle = '#a8c4d8'; k.fillRect(cx - 5, top + 6, 10, 2);
+  k.fillStyle = '#4d6b40'; k.fillRect(cx - 5, GROUND_Y - 3, 10, 3);
+  k.fillStyle = '#3a342e'; k.fillRect(x + 4, GROUND_Y - 1, w - 8, 1);
+  k.fillStyle = '#ffffff'; k.fillRect(x + 2, fy + 1, w - 4, 7);                    // the sign
+  k.fillStyle = '#3a7bd5'; k.fillRect(x + 2, fy + 7, w - 4, 1);
+  let tx = x + 4;
+  for (const rows of CAMEX_WORD) {
+    rows.forEach((r, j) => [...r].forEach((c, q) => { if (c === '#') k.fillRect(tx + q, fy + 3 + j, 1, 1); }));
+    tx += rows[0].length + 1;
+  }
+}
+const BULBA_FONT = {
+  B: ['##.', '#.#', '##.', '#.#', '##.'], U: ['#.#', '#.#', '#.#', '#.#', '###'], L: ['#..', '#..', '#..', '#..', '###'],
+  A: ['.#.', '#.#', '###', '#.#', '#.#'], N: ['#.#', '###', '###', '#.#', '#.#'], D: ['##.', '#.#', '#.#', '#.#', '##.'],
+};
+function bulbaShop(k, x) {
+  const fy = GROUND_Y - FLOOR, w = 64, red = '#c8102e', deep = '#9a0b23';
+  k.fillStyle = '#f4f2ee'; k.fillRect(x, fy, w, 7);                                  // fascia
+  let tx = x + 15;
+  for (const ch of 'BULBALAND') {                                                    // small 3×5 letters (owner)
+    BULBA_FONT[ch].forEach((r, j) => [...r].forEach((c, q) => {
+      if (c === '#') { k.fillStyle = (q + j) % 2 ? deep : red; k.fillRect(tx + q, fy + 1 + j, 1, 1); }   // stitched
+    }));
+    tx += 4;
+  }
+  k.fillStyle = red; k.fillRect(x, fy + 7, w, 5);                                     // the red band
+  k.fillStyle = '#ffffff';
+  for (let i = 0; i < w; i += 4) { k.fillRect(x + i + 1, fy + 7, 1, 1); k.fillRect(x + i + 3, fy + 11, 1, 1); }   // ornament
+  for (const [a, b] of [[5, 18], [27, 40], [49, 60]]) for (let i = x + a; i < x + b; i += 2) k.fillRect(i, fy + 9, 1, 1);   // the sign, in three languages
+  k.fillStyle = '#e6e8ea'; k.fillRect(x + 22, fy + 7, 1, 5); k.fillRect(x + 44, fy + 7, 1, 5);
+  const gy = fy + 12, gh = GROUND_Y - 3 - gy;
+  k.fillStyle = '#c9cdd2'; k.fillRect(x + 1, gy, 16, gh);                             // curtained window
+  k.fillStyle = '#a9aeb5'; for (let i = x + 2; i < x + 17; i += 2) k.fillRect(i, gy, 1, gh);
+  k.fillStyle = '#f7f7f5'; k.fillRect(x + 17, gy, 6, gh);                             // white pillar with the icons
+  k.fillStyle = red; k.fillRect(x + 19, gy + 1, 2, 1); k.fillRect(x + 19, gy + 3, 2, 2); k.fillRect(x + 19, gy + 6, 2, 1);
+  k.fillStyle = '#2f3238'; k.fillRect(x + 23, gy, 21, gh);                            // the open door, the shop inside
+  k.fillStyle = '#6b5a48'; k.fillRect(x + 27, gy + 2, 6, gh - 2);
+  k.fillStyle = '#9cc3d8'; k.fillRect(x + 36, gy + 1, 7, gh - 1);
+  k.fillStyle = '#9cc3d8'; k.fillRect(x + 45, gy, 18, gh);                            // right window with a blue poster
+  k.fillStyle = '#2a6db0'; k.fillRect(x + 50, gy + 1, 10, gh - 1);
+  k.fillStyle = '#ffffff'; k.fillRect(x + 54, gy + 2, 2, 1); k.fillRect(x + 53, gy + 3, 4, 1);
+  k.fillStyle = '#4a4f57'; for (const mx of [x, x + 23, x + 44, x + w - 1]) k.fillRect(mx, gy, 1, gh);
+  k.fillStyle = '#b4b6b8'; k.fillRect(x, GROUND_Y - 3, w, 3);                         // granite base
+  k.fillStyle = '#cfd1d3'; k.fillRect(x + 24, GROUND_Y - 3, 20, 1); k.fillRect(x + 22, GROUND_Y - 1, 24, 1);   // the steps
+}
+// Restaurant «Mtiuluri» (a real one in Batumi), 112px wide: a dark fascia with the lit sign
+// «რესტორანი მთიულური» (white, then red) over a light bar, a string of bulbs along the awning, rough grey
+// stone pillars with patches of brick and wicker lanterns, and glass fronts with the warm room behind.
+function restoShop(k, x) {
+  const fy = GROUND_Y - FLOOR, w = 112;
+  k.fillStyle = '#1f2125'; k.fillRect(x, fy, w, 12);                                // fascia
+  let tx = x + 3;
+  for (const [word, face, shade] of [['რესტორანი', '#f4f1ea', '#8d8a84'], ['მთიულური', '#ff3347', '#7a1420']]) {
+    for (const ch of word) {
+      FONT[ch].split(' ').forEach((r, j) => [...r].forEach((c, q) => {
+        if (c !== '#') return;
+        k.fillStyle = shade; k.fillRect(tx + q, fy + 2 + j, 1, 2);                   // the letters are 3D boxes
+        k.fillStyle = face; k.fillRect(tx + q, fy + 2 + j, 1, 1);
+      }));
+      tx += 6;
+    }
+    tx += 6;
+  }
+  k.fillStyle = '#fff6d8'; k.fillRect(x + 3, fy + 10, w - 6, 1);                    // light bar under the sign
+  k.fillStyle = '#3a3d44'; k.fillRect(x, fy + 11, w, 2);                            // awning edge
+  k.fillStyle = '#fff4c2'; for (let i = 2; i < w; i += 5) k.fillRect(x + i, fy + 12, 1, 1);   // bulbs
+  const gy = fy + 13, gh = GROUND_Y - 2 - gy;
+  k.fillStyle = '#6e3f1e'; k.fillRect(x, gy, w, gh);                                // the room behind the glass
+  k.fillStyle = '#b4733a'; k.fillRect(x, gy + 3, w, gh - 3);
+  k.fillStyle = '#ffe9a0';
+  for (let i = 4; i < w; i += 4) k.fillRect(x + i, gy + 1, 1, 1);                   // bulbs strung inside
+  for (const cx of [x + 22, x + 80]) { k.fillRect(cx - 2, gy + 3, 1, 1); k.fillRect(cx, gy + 4, 1, 1); k.fillRect(cx + 2, gy + 3, 1, 1); }   // chandeliers
+  k.fillStyle = '#8a5226';
+  for (let i = 2; i < w; i += 4) k.fillRect(x + i, gy + 4, 1, gh - 4);              // bead curtains
+  k.fillStyle = '#e8c08a';
+  for (let i = 8; i < w; i += 26) { k.fillRect(x + i, gy + 5, 1, 2); k.fillRect(x + i + 1, gy + 3, 1, 2); }   // glints on the glass
+  k.fillStyle = '#2e2a26';
+  for (let i = 0; i <= w; i += 13) k.fillRect(x + i, gy, 1, gh);                    // glass frames
+  for (const px of [x, x + 53, x + w - 6]) {                                       // stone pillars
+    k.fillStyle = '#6f6b67'; k.fillRect(px, gy - 2, 6, GROUND_Y - gy + 2);
+    k.fillStyle = '#55524e';
+    for (let j = gy; j < GROUND_Y; j += 3) k.fillRect(px + (j % 2 ? 0 : 3), j, 3, 1);
+    k.fillStyle = '#a0583a'; k.fillRect(px + 1, gy + 4, 3, 1); k.fillRect(px + 2, gy + 6, 3, 1);   // brick showing through
+    k.fillStyle = '#c9a46a'; k.fillRect(px + 2, gy, 2, 3);                          // wicker lantern
+    k.fillStyle = '#ffe0a0'; k.fillRect(px + 2, gy + 1, 1, 1);
+  }
+  k.fillStyle = '#4a4744'; k.fillRect(x, GROUND_Y - 2, w, 2);                       // sill
 }
 // Ground-floor greengrocer: open shopfront under a striped awning, crates of produce on the pavement
 // (tomatoes, cucumbers, aubergines, Adjarian mandarins, potatoes) and a couple of watermelons.
@@ -1044,7 +1417,7 @@ function addonFloor(k, w, n) {
 }
 
 // ---------- state ----------
-const game = { state: 'title', score: 0, coins: 0, lives: 3, time: TIME_LIMIT, checkpoint: false, paused: false, hi: loadHi(), t: 0, dieT: 0, winDone: false, fw: 0 };
+const game = { state: 'title', score: 0, coins: 0, lives: 3, time: TIME_LIMIT, checkpoint: false, paused: false, hi: loadHi(), seed: newSeed(), t: 0, dieT: 0, winDone: false, fw: 0 };
 let level, player;
 const cam = { x: 0 };
 let particles = [], texts = [];
@@ -1069,7 +1442,7 @@ function startLevel() {
   updateCamera();
 }
 function newGame() {
-  Object.assign(game, { score: 0, coins: 0, lives: 3, checkpoint: false, paused: false, winDone: false });
+  Object.assign(game, { score: 0, coins: 0, lives: 3, checkpoint: false, paused: false, winDone: false, seed: newSeed() });
   startLevel();
   game.state = 'play';
   musicStart();
@@ -1168,6 +1541,13 @@ function updatePlayer(dt) {
   if (pl.inv > 0) pl.inv -= dt;
   pl.anim += Math.abs(pl.vx) * dt;
   if (pl.y > H + 16) killPlayer(true);
+  if (!pl.splashed && pl.y + pl.h > GROUND_Y + 10 && level.pits.some(p => !p.sewer && pl.x + pl.w > p.x && pl.x < p.x + p.w)) {
+    pl.splashed = true;   // into the sea through a hole in the embankment
+    for (let i = 0; i < 10; i++) {
+      particles.push({ x: pl.x + pl.w / 2 + rand(-6, 6), y: GROUND_Y + 7, vx: rand(-80, 80), vy: rand(-240, -110), g: 900, life: 1, size: 2 + (i % 2), color: i % 3 ? '#7cc3e8' : '#ffffff' });
+    }
+    sfx.splash();
+  }
   for (const p of level.pits) {
     if (p.sewer && !pl.dead && pl.x + pl.w > p.x + 2 && pl.x < p.x + p.w - 2 && pl.y + pl.h > SEWAGE_Y + 2) {
       for (let i = 0; i < 10; i++) {
@@ -1177,6 +1557,16 @@ function updatePlayer(dt) {
       sfx.splash();
       killPlayer(true);
     }
+  }
+  if (pl.onGround && !pl.dead) for (const p of level.poops) {
+    if (p.squashed || pl.x + pl.w < p.x + 1 || pl.x > p.x + 4 || pl.y + pl.h < GROUND_Y - 1) continue;
+    p.squashed = true;
+    for (let i = 0; i < 9; i++) {
+      const side = i % 2 ? 1 : -1;
+      particles.push({ x: p.x + 2, y: GROUND_Y - 2, vx: side * rand(30, 110), vy: rand(-190, -70), g: 900, life: 0.55, size: 1 + (i % 3 === 0), color: i % 3 ? '#6b4423' : '#8f5e34' });
+    }
+    addText(p.x + 2, GROUND_Y - 26, STR.eww, '#c9a26a');
+    sfx.squish();
   }
 }
 function grow() {
@@ -1196,6 +1586,11 @@ function hurtPlayer() {
 }
 function killPlayer(fell) {
   if (player.dead) return;
+  if (GOD) {
+    if (fell) { player.y = Math.min(player.y, GROUND_Y + 8); player.vy = -720; player.splashed = false; }
+    if (game.time <= 0) game.time = 300;
+    return;
+  }
   player.dead = true;
   player.vx = 0;
   player.vy = fell ? 0 : -380;
@@ -1244,7 +1639,7 @@ function hitBlock(tx, ty) {
 
 // ---------- enemies & items ----------
 function befriend(d) {
-  d.mode = 'happy'; d.vx = 0;
+  d.mode = 'happy'; d.vx = 0; d.pose = 'wag'; d.poseT = rand(1.5, 3);
   game.score += 200;
   addText(d.x + d.w / 2, d.y - 8, STR.goodDog, '#ffd1dc');
   sfx.stomp();
@@ -1273,8 +1668,15 @@ function updateDog(d, dt) {
     speed = 52;
     d.barkT -= dt;
     if (d.barkT <= 0) { d.barkT = rand(1.2, 2.4); addText(d.x + d.w / 2, d.y - 8, STR.woof); sfx.bark(); }
-  } else if (d.mode === 'patrol') {
-    speed = 30;
+  } else if (d.mode === 'patrol') {   // walks up and down, sitting down for a moment now and then
+    if (d.sitT > 0) d.sitT -= dt;
+    else {
+      speed = 30;
+      if ((d.nextSit -= dt) <= 0) { d.sitT = rand(1, 2.5); d.nextSit = rand(4, 9); }
+    }
+  } else if (d.mode === 'happy' && (d.poseT -= dt) <= 0) {   // a friend wags, sits or lies down by turns
+    d.pose = ['wag', 'wag', 'sit', 'lie'][Math.floor(Math.random() * 4)];
+    d.poseT = rand(2, 4);
   }
   if (speed && d.onGround && edgeAhead(d, d.dir)) {
     if (d.mode === 'patrol') d.dir *= -1; else speed = 0;   // chasers stop at the edge and bark from there
@@ -1326,9 +1728,15 @@ function updateTaxi(c, dt) {
     if (c.x >= cam.x + W + 8) return;
     c.active = true;
     if (c.kind === 'moped') { sfx.moped(); addText(c.x + c.w / 2, c.y - 10, STR.delivery, '#7fd6ff'); }
+    else if (c.kind === 'scooter') { sfx.scooter(); addText(c.x + c.w / 2, c.y - 10, STR.scooter, '#ff9ad0'); }
+    else if (c.kind === 'cart') { sfx.cart(); addText(c.x + c.w / 2, c.y - 10, STR.tour, '#9fe8b0'); }
     else { sfx.honk(); addText(c.x + c.w / 2, c.y - 10, STR.honk, '#ffe27a'); }
   }
-  c.vx = (c.kind === 'moped' ? 140 : 110) * c.dir;
+  const front = c.dir < 0 ? c.x - 2 : c.x + c.w + 2;   // turn back at the edge of a hole instead of bridging it
+  if (c.y + c.h >= GROUND_Y - 1 && level.pits.some(p => front > p.x && front < p.x + p.w)) c.dir *= -1;
+  const speed = c.kind === 'scooter' ? 195 + 45 * Math.sin(game.t * 2.3 + c.phase) : c.kind === 'moped' ? 140 : c.kind === 'cart' ? 70 : 110;
+  c.vx = speed * c.dir;
+  if (c.kind === 'scooter' && c.onGround && Math.random() < dt * 0.9) c.vy = -290;   // hops for no reason
   c.vy = Math.min(c.vy + PHYS.g * dt, PHYS.maxFall);
   if (moveBody(c, dt).hitX) c.dir *= -1;
   if (c.y > H + 20 || c.x < cam.x - 500 || c.x > cam.x + W + 500) { c.dead = true; return; }
@@ -1341,6 +1749,7 @@ function updateTaxi(c, dt) {
     player.vy = input.jump ? -560 : -460;   // the roof works like a trampoline
     game.score += 100;
     if (c.kind === 'moped') { addText(c.x + c.w / 2, c.y - 8, STR.order, '#7fd6ff'); sfx.stomp(); }
+    else if (c.kind === 'scooter') { addText(c.x + c.w / 2, c.y - 8, STR.zoom, '#ff9ad0'); sfx.stomp(); }
     else { addText(c.x + c.w / 2, c.y - 8, STR.beep, '#ffe27a'); sfx.beep(); }
   } else {
     hurtPlayer();
@@ -1481,6 +1890,143 @@ function drawCloth(kind, color, x, y, s) {
   g.fillStyle = '#7a5a3a'; g.fillRect(x, y - 1, 1, 1);
 }
 // Neptune fountain: basin, two-tier pedestal with gilded mermaids, a gilded Neptune with a trident.
+// The old Wedding House at the entrance to the boulevard (demolished 25.02.2026), known as "the pig's head",
+// drawn after the owner's photo from the boulevard side: a pointed snout on the left, a tall sharp ear on top,
+// a crease running down from the ear between the flat left face and the dome, the dome flat on top and rounded
+// at the right, the glass "eye" under the snout, all on a saucer-like brim in a pool. The outline is traced
+// from the photo; heights are measured from the bottom of the canvas.
+const WEDDING = (() => {
+  const w = 101, h = 70, c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const k = c.getContext('2d'), px = (x, y, col) => { k.fillStyle = col; k.fillRect(x, h - 1 - y, 1, 1); };
+  const inPoly = (x, y, pts) => {
+    let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, yi] = pts[i], [xj, yj] = pts[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  const nearLine = (x, y, pts, d) => pts.slice(1).some(([x2, y2], i) => {
+    const [x1, y1] = pts[i], dx = x2 - x1, dy = y2 - y1;
+    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(x - x1 - t * dx, y - y1 - t * dy) < d;
+  });
+  const SHELL = [[0, 37], [16, 44], [30, 52], [34, 68], [37, 63], [45, 54], [56, 55], [66, 55], [78, 51], [85, 46],
+    [90, 41], [94, 33], [97, 21], [97, 10], [25, 10], [7, 30]];
+  const GLASS = [[7, 31], [25, 10], [6, 10], [4, 15], [4, 24], [5, 28]];
+  const CREASE = [[37, 63], [48, 45], [53, 39], [55, 10]];
+  for (let x = 0; x < w; x++) {
+    const brimTop = 10.5, brimBottom = 4 + 4 * ((x - 50) / 50) ** 2;
+    for (let y = 0; y < h; y++) {
+      const X = x + 0.5, Y = y + 0.5;
+      if (inPoly(X, Y, SHELL)) {
+        const edge = !inPoly(X, Y + 1, SHELL) && Y > 30;
+        const col = edge ? '#ffffff' : nearLine(X, Y, CREASE, 0.7) ? '#d3d0c7'
+          : X > 89 || Y < 14 ? '#e5e3dc' : X < 54 && Y < 30 - (X - 25) * 0.4 ? '#ebe9e3' : '#f6f5f0';
+        px(x, y, col);
+      } else if (inPoly(X, Y, GLASS)) px(x, y, (x * 2 + y) % 11 < 2 ? '#c2e3ec' : y < 18 ? '#5f8f9f' : '#7fb0bf');
+      else if (Y >= brimBottom && Y <= brimTop) px(x, y, Y > brimTop - 1 ? '#ffffff' : Y < brimBottom + 1 ? '#cfcbc1' : '#eeece6');
+    }
+  }
+  k.fillStyle = '#d9d2c4'; k.fillRect(0, h - 5, w, 1);                           // pool: stone rim, water
+  k.fillStyle = '#5fb3d3'; k.fillRect(0, h - 4, w, 4);
+  k.fillStyle = '#a5dff0'; for (let x = 3; x < w; x += 7) k.fillRect(x, h - 3, 3, 1);
+  return c;
+})();
+const WEDDING_X = 71 * T + 6;   // in the gap before the stairs
+// A bride and groom outside the Wedding House (owner), a little shorter than Giorgi, hearts floating up over them.
+const NEWLYWEDS = [
+  '.hhhhh....vvv..',
+  '.sssss...vsssv.',
+  '.sKsKs...vKsKv.',
+  '..sss...vvsssvv',
+  'bbbwbbb.vdddddv',
+  'bbbwbbb.vdddddv',
+  'bbbkbbb.vddrddv',
+  'bbbbbbsssddgdd.',
+  'sbbbbb...ddddd.',
+  '.bb.bb...ddddd.',
+  '.bb.bb..ddddddd',
+  '.bb.bb..ddddddd',
+  '.bb.bb..ddddddd',
+  'kkk.kkk.eeeeeee',
+];
+const NEWLYWED_INK = { K: '#1d1f24', h: '#2a1d14', s: '#f0c8a0', w: '#ffffff', b: '#1d1f24', k: '#0d0d0f', v: '#f2f4f8', d: '#fbfbf7', e: '#d8d4ca', r: '#e8344a', g: '#3d8a3a' };
+function drawWedding() {
+  if (WEDDING_X > cam.x + W || WEDDING_X + WEDDING.width < cam.x) return;
+  g.drawImage(WEDDING, WEDDING_X, GROUND_Y - WEDDING.height);
+  const x = WEDDING_X + 40, y = GROUND_Y - NEWLYWEDS.length;                       // a little shorter than Giorgi (owner)
+  g.fillStyle = '#d9d2c4'; g.fillRect(x - 3, GROUND_Y - 5, 21, 5);                  // a stone path across the pool
+  g.fillStyle = '#c4bcac'; g.fillRect(x - 3, GROUND_Y - 1, 21, 1);
+  NEWLYWEDS.forEach((row, j) => [...row].forEach((ch, i) => {
+    if (ch !== '.') { g.fillStyle = NEWLYWED_INK[ch]; g.fillRect(x + i, y + j, 1, 1); }
+  }));
+  g.fillStyle = '#ff6b9a';
+  for (const ph of [0, 0.5]) {
+    const u = (game.t * 0.4 + ph) % 1, hx = x + 6 + Math.round(Math.sin(u * 9 + ph * 7) * 2), hy = Math.round(y - 3 - u * 18);
+    g.fillRect(hx, hy, 1, 1); g.fillRect(hx + 2, hy, 1, 1); g.fillRect(hx, hy + 1, 3, 1); g.fillRect(hx + 1, hy + 2, 1, 1);
+  }
+}
+// A birzha (ბირჟა, owner): the yard spot where the men of the neighbourhood sit over nardi and dominoes — two
+// pairs face to face across little tables (owner), under a tin canopy with a vine on it, between the houses at
+// tiles 118–125. The men sit like the people on the cart.
+const BIRZHA_X = 119 * T + 2;
+const BIRZHA_MEN = [   // x, facing (1 = right), hair, cap, shirt, trousers, moustache
+  { x: 3, dir: 1, hair: '#c9c9c4', cap: null, shirt: '#f4f4ef', legs: '#1d1f24', tash: '#8d8d88' },
+  { x: 19, dir: -1, hair: '#2a1d14', cap: '#2b2e33', shirt: '#1f2024', legs: '#5a5d63', tash: null },
+  { x: 29, dir: 1, hair: '#9a9a96', cap: null, shirt: '#5a7fa8', legs: '#1d1f24', tash: '#3a3a3a' },
+  { x: 45, dir: -1, hair: '#16161a', cap: null, shirt: '#8a8f96', legs: '#3b5a8c', tash: '#16161a', smoke: true },
+];
+function birzhaMan(m, x, gy, hand) {   // drawn facing left with the torso at 0..3, mirrored to face right
+  g.save();
+  g.translate(x, gy);
+  if (m.dir > 0) { g.translate(4, 0); g.scale(-1, 1); }
+  g.fillStyle = '#8a6a48'; g.fillRect(-2, -4, 6, 1);                               // his stool
+  g.fillStyle = '#6b4f34'; g.fillRect(-1, -3, 1, 3); g.fillRect(3, -3, 1, 3);
+  g.fillStyle = '#f0c8a0'; g.fillRect(0, -13, 4, 4); g.fillRect(-3, -8 - hand, 1, 1);
+  g.fillStyle = m.cap || m.hair; g.fillRect(0, -14, 4, 2); g.fillRect(3, -12, 1, 2);
+  if (m.cap) g.fillRect(-1, -13, 2, 1);                                            // the peak of a flat cap
+  g.fillStyle = '#1d1f24'; g.fillRect(1, -12, 1, 1);
+  if (m.tash) { g.fillStyle = m.tash; g.fillRect(0, -10, 2, 1); }
+  g.fillStyle = m.shirt; g.fillRect(0, -9, 4, 4); g.fillRect(-2, -8 - hand, 2, 2);
+  g.fillStyle = m.legs; g.fillRect(-2, -6, 5, 2); g.fillRect(-2, -4, 2, 3);       // thighs on the stool, shins down
+  g.fillStyle = '#111114'; g.fillRect(-3, -1, 3, 1);
+  if (m.smoke) {
+    g.fillStyle = '#f4f4ef'; g.fillRect(-1, -10, 1, 1);
+    g.fillStyle = 'rgba(220,220,220,0.6)';
+    const u = (game.t * 0.7) % 1;
+    g.fillRect(-1 - Math.round(u * 3), -12 - Math.round(u * 8), 1, 1);
+  }
+  g.restore();
+}
+function drawBirzha() {
+  const x = BIRZHA_X, gy = GROUND_Y;
+  if (x + 60 < cam.x || x - 10 > cam.x + W) return;
+  g.fillStyle = '#5b5148'; g.fillRect(x, gy - 27, 2, 27); g.fillRect(x + 51, gy - 27, 2, 27);   // posts
+  g.fillStyle = '#6d4a2c';                                                         // the vine up the right post
+  for (let y = 2; y < 27; y++) g.fillRect(x + 53 + (Math.floor(y / 3) % 2), gy - y, 1, 1);
+  g.fillStyle = '#4f6e5a'; g.fillRect(x - 2, gy - 31, 58, 3);                     // corrugated tin roof
+  g.fillStyle = '#6a8c74'; for (let i = 0; i < 58; i += 3) g.fillRect(x - 2 + i, gy - 31, 1, 3);
+  g.fillStyle = '#3b5444'; g.fillRect(x - 2, gy - 28, 58, 1);
+  g.fillStyle = '#3f7a3a';                                                         // vine leaves along the edge
+  for (let i = 0; i < 58; i += 4) g.fillRect(x - 2 + i, gy - 28, 3, 1 + hash(i, 11) % 3);
+  g.fillStyle = '#5a9a4a'; for (let i = 2; i < 58; i += 8) g.fillRect(x - 2 + i, gy - 28, 2, 1);
+  g.fillStyle = '#5b2a5a';                                                         // grapes
+  for (const i of [7, 26, 44]) { g.fillRect(x + i, gy - 26, 3, 1); g.fillRect(x + i, gy - 25, 2, 1); g.fillRect(x + i, gy - 24, 1, 1); }
+  for (const t of [9, 35]) {                                                       // the two tables
+    g.fillStyle = '#8a6a48'; g.fillRect(x + t, gy - 9, 8, 1);
+    g.fillStyle = '#6b4f34'; g.fillRect(x + t + 1, gy - 8, 1, 8); g.fillRect(x + t + 6, gy - 8, 1, 8);
+  }
+  g.fillStyle = '#7a4a24'; g.fillRect(x + 10, gy - 11, 6, 2);                     // an open nardi board
+  g.fillStyle = '#e8d6a8'; g.fillRect(x + 11, gy - 11, 1, 1); g.fillRect(x + 14, gy - 11, 1, 1);
+  g.fillStyle = '#1d1f24'; g.fillRect(x + 12, gy - 11, 1, 1);
+  g.fillStyle = '#f4f4ef'; g.fillRect(x + 36, gy - 10, 2, 1); g.fillRect(x + 39, gy - 10, 2, 1); g.fillRect(x + 41, gy - 11, 1, 2);   // dominoes
+  g.fillStyle = '#1d1f24'; g.fillRect(x + 37, gy - 10, 1, 1); g.fillRect(x + 39, gy - 10, 1, 1);
+  const shake = Math.floor(game.t * 4) % 3 === 0 ? 1 : 0;                          // one shakes the dice,
+  const slam = Math.floor(game.t * 1.3) % 4 === 0 ? 2 : 0;                         // one slams a domino down
+  BIRZHA_MEN.forEach((m, i) => birzhaMan(m, x + m.x, gy, i === 0 ? 2 + shake : i === 3 ? slam : 0));
+}
 function drawFountain(f) {
   const cx = f.x, gy = GROUND_Y;
   if (cx + 40 < cam.x || cx - 40 > cam.x + W) return;
@@ -1544,11 +2090,7 @@ function drawTile(t, x, y, c, r) {
       g.fillStyle = '#ebe5db'; g.fillRect(x, y, T, 2);
       g.fillStyle = '#ada395'; g.fillRect(x, y + 9, T, 1);
       g.fillRect(x + (c % 2 ? 4 : 12), y + 2, 1, 7); g.fillRect(x + 8, y + 10, 1, 6);
-    } else {
-      g.fillStyle = '#4d4e55'; g.fillRect(x, y, T, T);
-      const h = hash(c, r);
-      g.fillStyle = '#5d5e66'; g.fillRect(x + h % 13, y + (h >>> 8) % 13, 2, 1); g.fillRect(x + (h >>> 4) % 13, y + (h >>> 12) % 13, 1, 1);
-    }
+    }   // the row under the sidewalk is the sea (drawSeaBand), the sidewalk is an embankment over it
   } else if (t === PEBBLE) {
     g.fillStyle = '#bdb5a9'; g.fillRect(x, y, T, T);
     for (let k = 0; k < 6; k++) {
@@ -1556,13 +2098,42 @@ function drawTile(t, x, y, c, r) {
       g.fillStyle = k % 2 ? '#a59d91' : '#d6cfc4'; g.fillRect(x + h % 14, y + (h >>> 8) % 14, 2, 2);
     }
   } else if (t === CONCRETE) {
-    g.fillStyle = '#a7a198'; g.fillRect(x, y, T, T);
-    g.fillStyle = '#c6c0b6'; g.fillRect(x, y, T, 1); g.fillRect(x, y, 1, T);
-    g.fillStyle = '#7f796f'; g.fillRect(x, y + T - 1, T, 1); g.fillRect(x + T - 1, y, 1, T);
-    if (hash(c, r) % 3 === 0) { g.fillRect(x + 5, y + 6, 3, 1); g.fillRect(x + 7, y + 7, 2, 1); }
+    drawContainer(x, y, c, r);
   } else {
     drawBalcony(t, x, y, c, r);
   }
+}
+// The stairs are stacks of shipping containers from the port, owner's call. Each row of CONCRETE tiles is cut
+// into containers two tiles long (three when the row is odd); a lone tile is a container seen end-on, doors
+// and locking bars. Colours: [body, ribs and frame, top rail].
+const CONTAINER_COLORS = [
+  ['#2a6fb0', '#1d5288', '#5b95cc'], ['#c23b2c', '#912a1f', '#de6a5c'], ['#e07b22', '#b05e14', '#f2a25c'],
+  ['#2e8a55', '#1f6640', '#5cb07f'], ['#7d8a8f', '#5d686d', '#a6b1b5'], ['#d1a019', '#a37b0f', '#ecc451'],
+  ['#1a9a8c', '#127167', '#4fc0b3'], ['#8a4a2b', '#66341d', '#b0704f'],
+];
+function drawContainer(x, y, c, r) {
+  const row = level.tiles[r];
+  let a = c, b = c;
+  while (row[a - 1] === CONCRETE) a--;
+  while (row[b + 1] === CONCRETE) b++;
+  const len = b - a + 1, k = c - a;
+  const start = len === 1 ? 0 : len % 2 && k >= len - 3 ? len - 3 : k - k % 2;
+  const size = len === 1 ? 1 : len % 2 && k >= len - 3 ? 3 : 2;
+  const [body, dark, light] = CONTAINER_COLORS[hash(a + start, r * 7 + 3) % CONTAINER_COLORS.length];
+  g.fillStyle = body; g.fillRect(x, y, T, T);
+  g.fillStyle = light; g.fillRect(x, y, T, 1);                                    // top rail
+  g.fillStyle = dark; g.fillRect(x, y + T - 2, T, 2);                             // bottom rail
+  if (size === 1) {                                                                // end-on: two doors, four bars
+    g.fillRect(x, y, 2, T); g.fillRect(x + T - 2, y, 2, T); g.fillRect(x + 7, y + 1, 2, T - 3);
+    g.fillStyle = '#d9d9d9'; for (const bx of [3, 5, 10, 12]) g.fillRect(x + bx, y + 2, 1, T - 5);
+    g.fillStyle = '#4a4a4a'; g.fillRect(x + 4, y + 8, 2, 1); g.fillRect(x + 11, y + 8, 2, 1);
+    return;
+  }
+  g.fillStyle = dark;
+  for (let i = 1; i < T; i += 3) g.fillRect(x + i, y + 2, 1, T - 5);              // corrugated sides
+  if (k === start) { g.fillRect(x, y, 2, T); g.fillStyle = '#3a3a3a'; g.fillRect(x, y, 2, 2); g.fillRect(x, y + T - 2, 2, 2); }   // end posts, corner castings
+  if (k === start + size - 1) { g.fillStyle = dark; g.fillRect(x + T - 2, y, 2, T); g.fillStyle = '#3a3a3a'; g.fillRect(x + T - 2, y, 2, 2); g.fillRect(x + T - 2, y + T - 2, 2, 2); }
+  if (k === start && hash(a + start, r) % 2) { g.fillStyle = '#f2f2f2'; g.fillRect(x + 4, y + 4, 6, 1); g.fillRect(x + 4, y + 6, 4, 1); }   // a painted-on code
 }
 function drawBalcony(t, x, y, c, r) {
   if (t === USED) {
@@ -1612,6 +2183,35 @@ function drawCoin(x, y, phase) {
 }
 // Sedan parked along the kerb, nose at x=0 (flipped when it faces right): long hood with a headlight,
 // raked windshield, cabin set back, shorter boot with a red tail lamp.
+// 3-pixel-tall letters: the stripe on the patrol car is too thin for the 5x7 font
+const POLICE_WORD = [['###', '###', '#..'], ['###', '#.#', '###'], ['#..', '#..', '###'], ['#', '#', '#'], ['###', '#..', '###'], ['###', '##.', '###']];
+function drawPickup(c) {   // a double cab: nose at x=0, flipped to face right; four doors, then a short open bed
+  g.save();
+  g.translate(Math.round(c.x), Math.round(c.y));
+  if (c.face > 0) { g.translate(50, 0); g.scale(-1, 1); }
+  const body = '#c2603a', shade = '#94452a', hi = '#de8a62';
+  g.fillStyle = body;
+  g.fillRect(0, 9, 32, 7); g.fillRect(1, 8, 9, 1);                             // hood and front
+  for (let r = 0; r < 7; r++) g.fillRect(12 - Math.round(r * 0.8), 2 + r, 20 + Math.round(r * 0.8), 1);   // the long cab
+  g.fillRect(32, 7, 18, 9);                                                    // bed
+  g.fillStyle = '#2b3f52';
+  for (let r = 0; r < 5; r++) g.fillRect(13 - Math.round(r * 0.8), 3 + r, 17 + Math.round(r * 0.8), 1);   // windows
+  g.fillStyle = body; g.fillRect(20, 3, 2, 5);                                 // B pillar between the two rows
+  g.fillStyle = shade;
+  g.fillRect(21, 9, 1, 5); g.fillRect(31, 7, 1, 7);                            // door seams
+  g.fillRect(32, 7, 1, 9); g.fillRect(0, 14, 50, 2); g.fillRect(34, 7, 15, 1); // bed wall, sills
+  g.fillStyle = '#e8c9b8'; g.fillRect(17, 10, 2, 1); g.fillRect(27, 10, 2, 1); // door handles
+  g.fillStyle = hi; g.fillRect(1, 9, 30, 1); g.fillRect(33, 8, 16, 1);
+  g.fillStyle = '#3d7a2e'; g.fillRect(35, 4, 7, 4); g.fillRect(36, 3, 5, 1);     // the cargo: a watermelon
+  g.fillStyle = '#8fc85a'; g.fillRect(37, 4, 1, 3); g.fillRect(39, 4, 1, 3);
+  g.fillStyle = '#f08a1a';                                                     // and mandarins
+  for (const [mx, my] of [[43, 5], [45, 6], [44, 4], [46, 5], [34, 6]]) g.fillRect(mx, my, 2, 2);
+  g.fillStyle = '#f3efcf'; g.fillRect(0, 10, 2, 2);                            // headlight
+  g.fillStyle = '#d02a20'; g.fillRect(48, 9, 2, 2);                            // tail lamp
+  g.fillStyle = '#3a3a40'; g.fillRect(0, 13, 3, 3); g.fillRect(47, 13, 3, 3);  // bumpers
+  wheel(5, 14); wheel(38, 14);
+  g.restore();
+}
 function drawSedan(c) {
   g.save();
   g.translate(Math.round(c.x), Math.round(c.y));
@@ -1631,6 +2231,23 @@ function drawSedan(c) {
   g.fillStyle = '#d02a20'; g.fillRect(44, 10, 2, 2);                           // tail lamp
   g.fillStyle = '#c9c9c9'; g.fillRect(0, 14, 4, 2); g.fillRect(42, 14, 4, 2);  // bumpers
   wheel(7, 14); wheel(33, 14);
+  if (c.police) {
+    g.fillStyle = '#1d1f24'; g.fillRect(3, 9, 40, 5);                          // black stripe along the side
+    const ph = Math.floor((game.t + c.phase) * 6) % 4;                         // light bar: blue, red, blue, red
+    g.fillStyle = '#2a2c30'; g.fillRect(18, 1, 12, 1);
+    g.fillStyle = ph % 2 === 0 ? '#3a7bff' : '#1c2c55'; g.fillRect(18, 0, 6, 1);
+    g.fillStyle = ph % 2 === 1 ? '#ff3030' : '#551c1c'; g.fillRect(24, 0, 6, 1);
+    g.fillStyle = ph % 2 === 0 ? 'rgba(58,123,255,0.35)' : 'rgba(255,48,48,0.35)';
+    g.fillRect(ph % 2 === 0 ? 15 : 23, -2, 10, 4);
+    g.restore();
+    let tx = Math.round(c.x) + 12;                                               // POLICE on the stripe, never mirrored
+    for (const rows of POLICE_WORD) {
+      g.fillStyle = '#ffffff';
+      rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch === '#') g.fillRect(tx + i, Math.round(c.y) + 10 + j, 1, 1); }));
+      tx += rows[0].length + 1;
+    }
+    return;
+  }
   const on = Math.floor((game.t + c.phase) * 2.4) % 2 === 0;   // hazard lights: parked "for a minute"
   g.fillStyle = on ? '#ffb020' : '#8a5a20';
   g.fillRect(3, 10, 1, 2); g.fillRect(42, 10, 1, 2);
@@ -1677,6 +2294,54 @@ function drawMoped(c) {
   g.fillStyle = '#f2f2f2'; g.fillRect(11, -1, 5, 5);                     // helmet
   g.fillStyle = '#2b3f52'; g.fillRect(11, 1, 2, 2);                      // visor
   wheel(1, 16); wheel(18, 16);
+  g.restore();
+}
+function drawCart(c) {   // nose at x=0, flipped when driving right; an open frame, no canopy, no body, no bumpers (owner)
+  g.save();
+  g.translate(Math.round(c.x), Math.round(c.y));
+  if (c.dir > 0) { g.translate(31, 0); g.scale(-1, 1); }
+  g.fillStyle = '#3a3e45';
+  g.fillRect(6, 12, 3, 1); g.fillRect(7, 13, 1, 10);                              // handlebar on a straight column down to the front wheel
+  g.fillRect(17, 10, 2, 7); g.fillRect(29, 10, 2, 7);                              // bench backs, a pixel behind them (owner)
+  g.fillStyle = '#2b2e33'; g.fillRect(10, 16, 9, 1); g.fillRect(22, 16, 9, 1);     // seat cushions
+  g.fillStyle = '#2a1d14'; g.fillRect(12, 6, 4, 2);                               // the driver, sitting up straight
+  g.fillStyle = '#f0c8a0'; g.fillRect(12, 7, 4, 4); g.fillRect(9, 12, 1, 1);
+  g.fillStyle = '#1d1f24'; g.fillRect(13, 8, 1, 1);
+  g.fillStyle = '#f4f4ef'; g.fillRect(12, 11, 4, 4); g.fillRect(10, 12, 2, 2);
+  g.fillStyle = '#3b5a8c'; g.fillRect(10, 14, 5, 2); g.fillRect(10, 16, 2, 3);    // his jeans: thighs on the seat, shins down
+  g.fillStyle = '#111114'; g.fillRect(9, 19, 3, 1);
+  g.fillStyle = '#16161a'; g.fillRect(23, 5, 5, 6); g.fillRect(24, 4, 3, 1);      // the woman, all in black, hijab and all
+  g.fillRect(23, 11, 5, 1); g.fillRect(22, 12, 6, 3);
+  g.fillRect(21, 14, 5, 2); g.fillRect(21, 16, 2, 3); g.fillRect(20, 19, 3, 1);   // her legs
+  g.fillStyle = '#f0c8a0'; g.fillRect(23, 7, 3, 3);
+  g.fillStyle = '#5a5a60'; g.fillRect(23, 8, 1, 1);
+  g.fillStyle = '#1d1d21'; g.fillRect(4, 21, 6, 4); g.fillRect(24, 21, 6, 4);     // small wheels, the front one under the column
+  g.fillStyle = '#8d939b'; g.fillRect(6, 22, 2, 2); g.fillRect(26, 22, 2, 2);
+  g.fillStyle = '#4a4f57'; g.fillRect(6, 20, 18, 2);                              // the low floor
+  g.fillStyle = '#fff3b0'; g.fillRect(5, 16, 2, 2);                               // a headlight on the column
+  g.fillStyle = '#c8241c'; g.fillRect(12, 17, 7, 3); g.fillRect(23, 17, 8, 5);    // red seat bases — the only colour; the rear
+  g.fillStyle = '#e8584a'; g.fillRect(12, 17, 7, 1); g.fillRect(23, 17, 8, 1);    // one is massive and is where the cart ends (owner)
+  g.restore();
+}
+function drawScooter(c) {   // nose at x=0, flipped when riding right; leans forward, the hood flaps
+  g.save();
+  g.translate(Math.round(c.x), Math.round(c.y));
+  if (c.dir > 0) { g.translate(16, 0); g.scale(-1, 1); }
+  const flap = Math.floor(game.t * 12) % 2;
+  g.fillStyle = '#9aa1ab'; g.fillRect(2, 8, 1, 13); g.fillRect(1, 7, 4, 1);    // stem and handlebar
+  g.fillStyle = '#2b2e33'; g.fillRect(1, 20, 14, 2);                           // deck
+  g.fillStyle = '#4fd06a'; g.fillRect(4, 20, 8, 1);                            // rental green
+  g.fillStyle = '#1d1d21'; g.fillRect(0, 21, 4, 3); g.fillRect(12, 21, 4, 3);  // wheels
+  g.fillStyle = '#8d939b'; g.fillRect(1, 22, 2, 1); g.fillRect(13, 22, 2, 1);
+  g.fillStyle = '#fff3b0'; g.fillRect(2, 9, 1, 1);                             // headlight
+  g.fillStyle = '#3b5a8c'; g.fillRect(6, 14, 2, 6); g.fillRect(10, 14, 2, 6);  // jeans
+  g.fillStyle = '#f2f2f2'; g.fillRect(5, 19, 3, 1); g.fillRect(10, 19, 3, 1);  // trainers
+  g.fillStyle = c.hoodie; g.fillRect(6, 7, 6, 7); g.fillRect(3, 8, 4, 2);      // hoodie, arms to the bar
+  g.fillRect(11 + flap, 5, 3, 3);                                              // the hood flapping behind
+  g.fillStyle = '#f0c8a0'; g.fillRect(6, 1, 5, 6); g.fillRect(2, 8, 1, 1);     // head, hand
+  g.fillStyle = '#1d1f24'; g.fillRect(6, 0, 6, 2); g.fillRect(11, 2, 2, 1);    // cap on backwards
+  g.fillRect(6, 3, 1, 1); g.fillStyle = '#7a2a20'; g.fillRect(6, 5, 2, 1);     // eye, yelling mouth
+  g.fillStyle = '#ffffff'; g.fillRect(10, 3, 1, 2);                            // an earbud
   g.restore();
 }
 function drawPrius(c) {
@@ -1740,6 +2405,17 @@ function drawCarEnd(c) {   // a car parked across the sidewalk, seen nose-on or 
   } else {
     g.fillStyle = '#d8261c'; g.fillRect(x + 1, y + 10, 4, 2); g.fillRect(x + 17, y + 10, 4, 2);
   }
+  if (c.police) {   // patrol car: a black stripe across the front (no lettering, owner), light bar on the roof
+    g.fillStyle = '#1d1f24'; g.fillRect(x, y + 12, 22, 5);
+    g.fillStyle = '#f2f2f2'; g.fillRect(x + 8, y + 14, 6, 2);                    // number plate
+    g.fillStyle = '#1d1d21'; g.fillRect(x + 1, y + 17, 4, 3); g.fillRect(x + 17, y + 17, 4, 3);
+    const ph = Math.floor((game.t + c.phase) * 6) % 2;
+    g.fillStyle = '#2a2c30'; g.fillRect(x + 5, y + 1, 12, 1);
+    g.fillStyle = ph === 0 ? '#3a7bff' : '#1c2c55'; g.fillRect(x + 5, y, 6, 1);
+    g.fillStyle = ph === 1 ? '#ff3030' : '#551c1c'; g.fillRect(x + 11, y, 6, 1);
+    g.fillStyle = ph === 0 ? 'rgba(58,123,255,0.35)' : 'rgba(255,48,48,0.35)'; g.fillRect(ph === 0 ? x + 2 : x + 10, y - 2, 10, 4);
+    return;
+  }
   g.fillStyle = '#3a3a40'; g.fillRect(x, y + 14, 22, 2);
   g.fillStyle = '#f2f2f2'; g.fillRect(x + 8, y + 13, 6, 2);
   g.fillStyle = '#1d1d21'; g.fillRect(x + 1, y + 16, 4, 4); g.fillRect(x + 17, y + 16, 4, 4);
@@ -1751,12 +2427,13 @@ function drawCarEnd(c) {   // a car parked across the sidewalk, seen nose-on or 
 function drawDog(d) {
   const face = d.dir > 0 ? 'r' : 'l', DOG = DOGS[d.coat][d.tag];
   let img;
-  if (d.mode === 'sleep') img = DOG.sleep[face];
+  if (d.mode === 'sleep' || (d.mode === 'happy' && d.pose !== 'wag')) img = DOG[d.pose][face];
   else if (d.mode === 'happy') img = (Math.floor(d.t * 7) % 2 ? DOG.wag : DOG.a)[face];
+  else if (d.mode === 'patrol' && d.sitT > 0) img = DOG.sit[face];
   else img = (Math.floor(d.t * (d.mode === 'chase' ? 10 : 6)) % 2 ? DOG.b : DOG.a)[face];
   const x = Math.round(d.x - 1), y = Math.round(d.y + d.h - img.height);
   g.drawImage(img, x, y);
-  if (d.mode === 'sleep') {
+  if (d.mode === 'sleep' && d.pose === 'sleep') {
     const k = (d.t * 0.7) % 1;
     g.globalAlpha = 1 - k; g.drawImage(ZZZ, x + 12 + Math.round(k * 4), y - 6 - Math.round(k * 10)); g.globalAlpha = 1;
   } else if (d.mode === 'happy' && Math.floor(d.t * 2) % 2) {
@@ -1803,6 +2480,21 @@ function drawStatue() {
   const off = (1 - Math.cos(game.t * 0.35)) * 12;
   drawFigure(cx - 26 + off, GROUND_Y - 5, 86, false);
   drawFigure(cx + 26 - off, GROUND_Y - 5, 78, true);
+}
+// The sea under the embankment, along the whole street: it shows below the sidewalk and in the holes.
+const SEA_TOP = GROUND_Y + T;
+function drawSeaBand() {
+  const x0 = Math.floor(cam.x), x1 = Math.min(cam.x + W, SEA_COL * T);
+  g.fillStyle = '#2d7fb5'; g.fillRect(x0, SEA_TOP, x1 - x0, H - SEA_TOP);
+  g.fillStyle = '#245f8a'; g.fillRect(x0, SEA_TOP, x1 - x0, 2);                     // shade under the embankment
+  g.fillStyle = '#7cc3e8';
+  for (let i = Math.floor(x0 / 8) * 8; i < x1; i += 8) g.fillRect(i + Math.round(Math.sin(game.t * 2 + i) * 2), SEA_TOP + 4 + (i / 8 % 2) * 4, 4, 1);
+  for (const p of level.pits) {                                                    // open water in the holes
+    if (p.sewer || p.x > x1 || p.x + p.w < x0) continue;
+    g.fillStyle = '#2d7fb5'; g.fillRect(p.x, GROUND_Y + 8, p.w, SEA_TOP - GROUND_Y - 8);
+    g.fillStyle = '#7cc3e8';
+    for (let i = p.x; i < p.x + p.w - 3; i += 8) g.fillRect(i + Math.round(Math.sin(game.t * 2 + i) * 1.5) + 1, GROUND_Y + 8, 3, 1);
+  }
 }
 function drawSea() {
   const x = SEA_COL * T;
@@ -1865,10 +2557,25 @@ function drawStink(p) {
   }
   g.globalAlpha = 1;
 }
+function drawPoop(p) {
+  if (p.x > cam.x + W || p.x + 12 < cam.x) return;
+  if (p.squashed) {                                               // a flat smear with splats around it
+    g.fillStyle = '#5a391d'; g.fillRect(p.x - 2, GROUND_Y - 1, 9, 1);
+    g.fillRect(p.x - 5, GROUND_Y - 1, 1, 1); g.fillRect(p.x + 9, GROUND_Y - 1, 1, 1);
+    return;
+  }
+  g.fillStyle = '#5a391d'; g.fillRect(p.x, GROUND_Y - 2, 5, 2);
+  g.fillStyle = '#6b4423'; g.fillRect(p.x + 1, GROUND_Y - 3, 3, 1);
+  g.fillStyle = '#8f5e34'; g.fillRect(p.x + 2, GROUND_Y - 4, 1, 1); g.fillRect(p.x + 1, GROUND_Y - 2, 1, 1);
+  const a = game.t * 7 + p.x;                                     // a fly circling it
+  g.fillStyle = '#1b1b1f'; g.fillRect(p.x + 2 + Math.round(Math.cos(a) * 4), GROUND_Y - 8 + Math.round(Math.sin(a * 1.3) * 2), 1, 1);
+}
 function drawWorld() {
   for (const b of level.buildings) drawBuilding(b);
   for (const r of level.ropes) drawRope(r);
   for (const f of level.fountains) drawFountain(f);
+  drawWedding();
+  drawBirzha();
   const fx = CHECKPOINT_X + 8;
   g.fillStyle = '#d9d9d9'; g.fillRect(fx, GROUND_Y - 50, 2, 50);
   drawGeorgianFlag(fx + 2, Math.round(level.flagY));
@@ -1877,13 +2584,15 @@ function drawWorld() {
     drawBarrier(p.x - 14); drawBarrier(p.x + p.w + 2);
   }
   for (const p of level.pits) if (p.sewer) drawStink(p);
+  drawSeaBand();
   drawSea();
   for (const it of level.items) g.drawImage(KHACH, Math.round(it.x), Math.round(it.y));
   drawTiles();
+  for (const p of level.poops) drawPoop(p);
   for (const c of level.coins) if (!c.taken) drawCoin(c.x, c.y, c.x * 0.05);
   drawStatue();
-  for (const c of level.cars) if (c.kind === 'side') drawSedan(c); else drawCarEnd(c);
-  for (const c of level.taxis) if (c.kind === 'moped') drawMoped(c); else drawPrius(c);
+  for (const c of level.cars) if (c.kind === 'side') drawSedan(c); else if (c.kind === 'pickup') drawPickup(c); else drawCarEnd(c);
+  for (const c of level.taxis) if (c.kind === 'moped') drawMoped(c); else if (c.kind === 'scooter') drawScooter(c); else if (c.kind === 'cart') drawCart(c); else drawPrius(c);
   for (const d of level.dogs) drawDog(d);
   drawPlayer();
   for (const p of level.pits) if (p.sewer) drawSewage(p);   // in front of whoever sinks in it
@@ -1985,10 +2694,11 @@ function glyph(ch, color) {
   }
   return c;
 }
+const fontCase = s => String(s).toUpperCase().replace(/[\u1C90-\u1CBA]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x1C90 + 0x10D0));
 // Draws into the game buffer `g` in game pixels; `scale` multiplies the 5x7 cell.
 function txt(s, x, y, { scale = 1, color = '#ffffff', align = 'left', shadow = 'rgba(0,0,0,0.7)' } = {}) {
   // Uppercasing turns Georgian into Mtavruli capitals; the font keys them by the ordinary letters.
-  s = String(s).toUpperCase().replace(/[\u1C90-\u1CBA]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x1C90 + 0x10D0));
+  s = fontCase(s);
   const adv = 6 * scale, w = s.length * adv - scale;
   let x0 = Math.round(align === 'center' ? x - w / 2 : align === 'right' ? x - w : x);
   y = Math.round(y);
@@ -2016,6 +2726,7 @@ function drawHUD() {
     txt(label, x, 6); txt(value, x, 15);
   });
   if (muted && !touchMode) txt(STR.soundOff, W - 8, H + TOP - 12, { align: 'right' });
+  if (GOD) txt(STR.god, 8, H + TOP - 12, { color: '#ffd23f' });
 }
 function panel() {
   g.fillStyle = 'rgba(10,14,28,0.6)';
@@ -2031,6 +2742,47 @@ function para(s, y, opts = {}) {
   out.push(line);
   for (const l of out) { txt(l, W / 2, y, { align: 'center', ...opts }); y += 11 * scale; }
   return y;
+}
+// The touch buttons are pixel-art keyboard keys (owner): a keycap with cut corners, a light top face over a
+// thick darker lip, the icon or the word in the game's own font; pressed, the face sinks onto the lip. Each is
+// drawn on an n×n grid, blown up ×6 cell by cell and set as the button's background (--img, and --img-on for
+// pressed); the button text stays only for screen readers.
+const BUTTON_ICONS = {
+  left: ['....#', '...##', '..###', '.####', '#####', '.####', '..###', '...##', '....#'],
+  right: ['#....', '##...', '###..', '####.', '#####', '####.', '###..', '##...', '#....'],
+  jump: ['....#....', '...###...', '..#####..', '.#######.', '#########'],
+  pause: ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##', '##.##'],
+  mute: ['...###', '...#.#', '...#.#', '...#..', '.###..', '####..', '.##...'],
+  fs: ['##...##', '#.....#', '.......', '.......', '.......', '#.....#', '##...##'],
+};
+function buttonSkin(n, icon, word, yellow, on) {
+  const z = 6, c = document.createElement('canvas'); c.width = c.height = n * z;
+  const k = c.getContext('2d');
+  const box = (x, y, w, h, color) => { k.fillStyle = color; k.fillRect(x * z, y * z, w * z, h * z); };
+  const cap = (x, y, w, h, color) => { box(x + 1, y, w - 2, h, color); box(x, y + 1, w, h - 2, color); };   // corners cut
+  const face = yellow ? '#ffd23f' : '#ece8de', light = yellow ? '#fff0a8' : '#ffffff', lipC = yellow ? '#c08e12' : '#a9a397';
+  const sink = on ? 2 : 0, lip = on ? 1 : 3;
+  cap(0, 0, n, n, '#1e2028');                                                      // outline
+  cap(1, 1, n - 2, n - 2, lipC);                                                   // the lip under the face
+  const fy = 1 + sink, fh = n - 2 - lip - sink;
+  cap(2, fy, n - 4, fh, face);                                                     // the top face
+  box(3, fy, n - 6, 1, light); box(2, fy + 1, 1, fh - 2, light);                   // its lit edges
+  const ink = '#2a2c34', cy = fy + fh / 2;
+  if (word) {
+    const s = fontCase(word), w = s.length * 6 - 1;
+    let x = Math.round((n - w) / 2);
+    for (const ch of s) { if (ch !== ' ') k.drawImage(glyph(ch, ink), x * z, Math.round(cy - 3.5) * z, 5 * z, 7 * z); x += 6; }
+  } else {
+    const h = icon.length, w = icon[0].length, x0 = Math.round((n - w) / 2), y0 = Math.round(cy - h / 2);
+    icon.forEach((row, j) => { for (let i = 0; i < w; i++) if (row[i] === '#') box(x0 + i, y0 + j, 1, 1, ink); });
+  }
+  return `url(${c.toDataURL()})`;
+}
+for (const b of document.querySelectorAll('#touch button')) {
+  const key = b.dataset.dir || b.dataset.act || b.id, word = key === 'run' ? STR.run : null;
+  const n = word ? Math.max(18, fontCase(word).length * 6 + 9) : b.closest('.mid') ? 16 : 18;
+  b.style.setProperty('--img', buttonSkin(n, BUTTON_ICONS[key], word, key === 'jump', false));
+  b.style.setProperty('--img-on', buttonSkin(n, BUTTON_ICONS[key], word, key === 'jump', true));
 }
 function drawOverlay() {
   const c = W / 2, blink = Math.floor(game.t * 2) % 2 === 0, big = W >= 260 ? 3 : 2;
@@ -2065,10 +2817,33 @@ function drawOverlay() {
   g.restore();
 }
 
+// Airliners crossing the sky — Batumi airport is right by the town: one coming in to land, one climbing out.
+const PLANES = [
+  { v: 21, y: 26, dy: 0.05, dir: -1, tail: '#c8343a', off: 0 },
+  { v: 15, y: 70, dy: -0.06, dir: 1, tail: '#2f5fb0', off: 260 },
+];
+function drawPlanes() {
+  for (const p of PLANES) {
+    const span = W + 140, d = (game.t * p.v + p.off) % span;
+    const x = Math.round(p.dir > 0 ? d - 70 : W + 70 - d), y = Math.round(p.y + p.dy * d);
+    g.save(); g.translate(x, y);
+    if (p.dir < 0) g.scale(-1, 1);
+    g.fillStyle = '#f4f6f8'; g.fillRect(0, 3, 18, 3); g.fillRect(18, 4, 2, 2);       // fuselage and nose
+    g.fillStyle = '#cfd6de'; g.fillRect(1, 5, 18, 1);
+    g.fillStyle = p.tail; g.fillRect(0, 0, 2, 3); g.fillRect(2, 1, 1, 2);           // the tail fin
+    g.fillStyle = '#9aa6b2'; g.fillRect(0, 4, 4, 1); g.fillRect(7, 5, 7, 1); g.fillRect(8, 6, 5, 1);   // stabiliser, wing
+    g.fillStyle = '#6d7884'; g.fillRect(9, 6, 3, 1);                               // engine
+    g.fillStyle = '#7a8fa6'; for (let i = 4; i < 16; i += 2) g.fillRect(i, 4, 1, 1);   // windows
+    g.fillStyle = '#2b3f52'; g.fillRect(18, 4, 1, 1);                              // cockpit
+    if (Math.floor(game.t * 1.5 + p.off) % 2) { g.fillStyle = '#ff4040'; g.fillRect(0, 0, 1, 1); }
+    g.restore();
+  }
+}
 function render() {
   g.save(); g.translate(0, TOP);
   g.fillStyle = skyGrad; g.fillRect(0, -TOP, W, H + TOP);
   g.drawImage(SUN, W - 87, 31);
+  drawPlanes();
   drawLayer(HILLS, 0.12);
   drawLayer(SKYLINE, 0.3);
   drawLayer(LANDMARKS, LANDMARK_FACTOR, (1 - LANDMARK_FACTOR) * (W - BASE_W) / 2);
