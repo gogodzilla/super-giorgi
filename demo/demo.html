@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Super Giorgi demo</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #10141c; overflow: hidden; }
+  #stage { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  iframe { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; }
+  /* ?insta: a 9:16 stage for Reels/Stories, the game in its phone layout without the gamepad; sky above it */
+  body.insta { background: #000; display: flex; align-items: center; justify-content: center; }
+  body.insta #stage { background: #5fb4ea; }
+</style>
+</head>
+<body>
+<!-- The game runs unchanged in the frame; demo.js, loaded into it, plays it through window.__mario. -->
+<div id="stage"><iframe id="game" allow="autoplay"></iframe></div>
+<script>
+  // the query goes on to the game (?lang=en, ?outfit=classic); the bot is loaded into the game's own window
+  const frame = document.getElementById('game'), stage = document.getElementById('stage');
+  const insta = new URLSearchParams(location.search).has('insta');
+  // ?insta: no fullscreen for the frame (same-origin frames may by default), or the game, taking itself for a phone,
+  // would go fullscreen on the first click; F fullscreens the 9:16 page instead
+  if (insta) { document.body.classList.add('insta'); frame.allow = "autoplay; fullscreen 'none'"; }
+  else { frame.allow = 'fullscreen; autoplay'; frame.allowFullscreen = true; }
+
+  // ?insta: the stage is the largest 9:16 box in the window. The frame is taller than the stage (clipped), so the
+  // game's phone layout zooms the world to the full width instead of shrinking it for the gamepad; the game is
+  // then moved down a little, sky above it, its own page (painted sea) below.
+  const SKY_SHARE = 0.35;   // of the spare height, the part that goes above the game (Reels covers more at the bottom)
+  function sizeStage() {
+    const h = Math.min(innerHeight, Math.floor(innerWidth * 16 / 9)), w = Math.round(h * 9 / 16);
+    stage.style.width = w + 'px'; stage.style.height = h + 'px';
+    frame.style.width = w + 'px'; frame.style.height = h + 200 + 'px';
+  }
+  function placeGame() {
+    const canvas = frame.contentDocument && frame.contentDocument.getElementById('game');
+    if (!canvas) return;
+    const spare = stage.clientHeight - canvas.getBoundingClientRect().height;
+    frame.style.top = Math.max(0, Math.round(spare * SKY_SHARE)) + 'px';
+  }
+  function toggleFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen().catch(() => {});
+  }
+  if (insta) {
+    sizeStage();
+    addEventListener('resize', sizeStage);
+    addEventListener('keydown', e => { if (e.code === 'KeyF' && !e.repeat) toggleFullscreen(); });
+  }
+
+  frame.src = '../index.html' + location.search;
+  frame.addEventListener('load', () => {
+    const win = frame.contentWindow, doc = frame.contentDocument;
+    if (insta) {
+      const css = doc.createElement('style');
+      css.textContent = '#touch { display: none !important; } html, body { background: #2d7fb5 !important; }';
+      doc.head.append(css);
+      win.dispatchEvent(new Event('touchstart'));   // the game switches to its touch layout on the first touch
+      win.addEventListener('resize', placeGame);      // runs after the game's own resize handler
+      placeGame();
+      // the frame may not go fullscreen (that would undo the 9:16 stage), so F takes the whole page there instead
+      win.addEventListener('keydown', e => { if (e.code === 'KeyF' && !e.repeat) toggleFullscreen(); });
+    }
+    const s = doc.createElement('script');
+    s.src = new URL('demo.js', location.href).href;
+    doc.body.append(s);
+    frame.focus();
+  });
+</script>
+</body>
+</html>

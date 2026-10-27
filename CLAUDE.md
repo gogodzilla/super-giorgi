@@ -25,6 +25,20 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
 - Syntax check: `node --check game.js`. There is no test suite.
 - `window.__mario` exposes `game`, `player`, `level`, `cam`, `input` and `setAction(action, down)`
   for scripted play-testing from the console (e.g. teleport `player.x`, press `start`/`jump`/`right`).
+- **Demo autopilot for recording videos** (`demo/`, not deployed): serve the repo and open `demo/demo.html` (query goes on
+  to the game, e.g. `?lang=en`), click once. It loads the game unchanged in a frame and injects `demo.js` into it, which
+  hooks `input.pressed.clear` (called after every fixed step) and plays through `window.__mario`: every other step it
+  simulates the player ~1 s ahead for ~90 input plans against predicted dogs/traffic/items/coins and follows a route
+  (coin/khachapuri/chacha balconies, items, dogs close ahead, a stop at the birzha). It runs and walks by turns to
+  keep ~110 px/s on the move (`?pace=150` runs all the way), running anyway when walking can't clear a gap. Every jump
+  costs score in its plans (`JUMP_COST`), or it hops all the time. Receding-horizon plans like "wait, then go" can win
+  every replan and never happen, so after a second without 12px of progress only plans that act now count, and a goal
+  is dropped after 1.5 s of that; stuck before a stretch a vehicle shuttles along, it quietly removes the vehicle while
+  it is still parked off screen (`clearTheWay`). B toggles it; `window.__demo` in the
+  frame has the stats. It mirrors `PHYS`, `moveBody` and the enemy rules — re-check it when those change.
+  `demo.html?insta` records for Reels/Stories: a 9:16 stage, the game forced into its phone layout (a synthetic
+  `touchstart`) with `#touch` hidden, the frame taller than the stage so the world zooms to full width, sky colour
+  above and sea colour below; F fullscreens the outer page (the frame has no fullscreen permission there).
 - `?god=1` — god mode (`GOD`) for play-testing: `killPlayer` does nothing, holes and sewers toss Giorgi back up,
   the clock refills; «режим бога» shows bottom-left.
 
@@ -98,12 +112,22 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
   and harmless), Prius taxis (activate when on screen, drive left, reverse on obstacles; roof works as a
   trampoline; taxis and mopeds turn back at the edge of a hole or sewer instead of driving over it — owner).
   `checkJumpOver()` awards the jump-over bonus.
+- **Khachapuri** is Adjarian, drawn after photos (owner asked to check it against the real thing): `KHACH`, a boat of
+  pale golden crust with the ends twisted into points, molten cheese, the yolk in its white and a pat of butter. Keep
+  the outline symmetric (owner found an uneven one crooked).
+- **Khinkali** (owner): two per game, one in each half, hidden in coin balconies (`BALC_KHINK`, picked with `lrand`,
+  drawn like any coin balcony); the dumpling (`KHINK`) slides out like the khachapuri and is an extra life.
+- **The Georgian Bus coach** Giorgi came in on (owner) is parked whole at the start of the street, tiles 0–9
+  (`BUS`, `BUS_X`, `drawBus`; decor, no collision): he sets off from beside it and the camera rolls past. Livery after
+  the company's photos: white, GEORGIAN BUS in red in the small 3×5 letters (`BULBA_FONT` plus a 4-wide N — the 3-wide
+  one reads as M), red brush strokes and small crosses, three axles, a Tourismo's bug-eye mirror.
 - **Chacha** (a feature request from Anton, via the owner): two plain balconies per game, one in each half of the
   street (picked with `lrand`), hold a bottle of chacha (`BALC_CHACHA`, sprite `CHACHA`); such a balcony is given away by a
   man in a white vest out there for a smoke (owner; a `SMOKER` sprite in a dark open doorway, standing a step up so
   the vest clears the railing — owner found the first one blurry; `drawBalcony`, no laundry or glint on it). It bounces along like
   Mario's star; drinking it sets `player.star` = `CHACHA_TIME` (10 s): nothing hurts Giorgi (`hurtPlayer` returns),
-  holes and sewers toss him back up as in god mode, every dog he touches is befriended, and he shimmers through
+  holes and sewers toss him back up as in god mode, every dog he touches is befriended (landing on one still bounces him
+  off it, as without chacha — owner), and he shimmers through
   `STAR_COLORS` (`TINT` canvas in `drawPlayer`), slower in the last two seconds. The timer can still run out.
 - **Dogs never die and never kill — owner's rule.** No code path may remove a dog: they are befriended,
   hop over a Prius instead of being run over, and are put back on the sidewalk if they ever fall into a pit.
@@ -150,7 +174,7 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
   rows at 27 and 179 — owner wanted one early; a white car next to it is repainted blue in `across`): a black stripe across
   the front with a number plate, no lettering (owner), light bar.
 - **Easter egg: a terracotta double-cab pickup** (`makePickup`, `drawPickup`, kind `'pickup'` in `level.cars`) parked on the
-  pebble beach past Ali & Nino (tile 215), its bed loaded with watermelons and mandarins.
+  pebble beach past Ali & Nino (`PICKUP_X`, tile 214); at the finish the camera eases on until it is in the shot. Its bed is loaded with watermelons and mandarins.
 - **The old Wedding House** ("the pig's head", demolished 25.02.2026) stands in the gap before the stairs
   (`WEDDING`, `WEDDING_X` = tile 71). Outline traced from the owner's photo from the boulevard side (`SHELL`,
   `GLASS`, `CREASE` polygons): pointed snout left, tall sharp ear, a crease from the ear down between the flat
@@ -161,8 +185,13 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
   shorter boot); `c.face` picks the direction.
 - Taxis are 3rd-generation (2010) Priuses in metallic paint (`PRIUS_COLORS`: body/shade/highlight, plus a
   reflection that slides with the car's world position) with a roof taxi sign and no checker stripe; the
-  silhouette lives in `PRIUS_TOP`/`PRIUS_BELT`. Owner asked for a blunt, rounded nose and no hard diagonal
-  lines on the body (no character line, faint paint glint) — keep it that way.
+  silhouette lives in `PRIUS_TOP`/`PRIUS_BELT`, redrawn after the owner's side photo of a 2010 car: the hood rising
+  from a low nose into the raked windscreen, the roof peaking over the B-pillar, the tail cut off nearly upright. The
+  headlight is a sliver under the hood edge sweeping up and back (light rim, dark lower edge so it shows on silver),
+  the tail lamp runs down the tail under the spoiler, door shut lines are faint (owner: not contrasting), and the
+  taxi sign is a small plain orange box seen from the side (4 px — a roof sign is short in profile), not turned to
+  the viewer (owner). Owner asked for a blunt,
+  rounded nose and no hard diagonal lines on the body (no character line, faint paint glint) — keep it that way.
 - The checkpoint flag is hoisted gradually (`level.flagY`), never snapped to the top.
 - **Background**: sky gradient, airliners crossing it (`PLANES`, `drawPlanes`, positions from `game.t` — one
   landing, one climbing out), then pre-rendered parallax layers tiled horizontally: `HILLS`, `SKYLINE`

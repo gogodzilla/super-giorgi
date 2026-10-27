@@ -24,7 +24,7 @@ English · Русский · ქართული
 - **Parked cars.** Sedans left on the pavement with their hazard lights blinking, and a patrol car with its light bar on. Look out for a terracotta pickup, too.
 - **Stray dogs.** Dogs in every coat, with yellow, red, blue or green ear tags. Some sleep, some patrol, and some wake up and chase you. They never hurt you and they never get hurt: land on one and it becomes your friend. A bump only knocks Giorgi back.
 - **Khrushchyovkas.** Five floors, a sixth one added later in different bricks (sometimes still half built), a greengrocer, a SPAR, the Belarusian Bulbaland, the Mtiuluri restaurant or a passage under a Camex sign on the ground floor, and washing lines strung between the houses.
-- **Balconies.** Headbutt them like Mario's bricks. Out fall coins, khachapuri, the occasional slipper, and a bottle of chacha from the balcony where a man is out for a smoke. Chacha makes Giorgi immortal for ten seconds.
+- **Balconies.** Headbutt them like Mario's bricks. Out fall coins, khachapuri, the occasional slipper, a bottle of chacha from the balcony where a man is out for a smoke, and now and then a khinkali. Chacha makes Giorgi immortal for ten seconds, and a khinkali is an extra life.
 - **Shipping containers.** Stacked into staircases, straight from the port.
 - **Burst sewers.** Holes in the pavement, plus ponds of sewage with a geyser. Don't fall in.
 - **Dog poop.** Left on the pavement here and there. Stepping in it does nothing but splatter.
@@ -105,9 +105,11 @@ A fan-made game, not affiliated with or endorsed by Nintendo, Toyota, SPAR or an
 - **A new street every game.** Each new game picks which vehicles come at you, how many dogs are out, what the balconies hold and where the poop lies. The traffic still gets harder as you go. If you die, you get the same street back.
 - **New traffic.** The boulevard's electric sightseeing cart and an unhinged kid on a rental e-scooter. Priuses and mopeds come in random colours, and they turn back at holes in the pavement instead of driving over them.
 - **New ground floors.** The Belarusian Bulbaland shop and a passage into a courtyard under a Camex sign.
-- **Chacha.** A bottle hides in the two balconies where a man stands smoking. Drink it and nothing can hurt you for ten seconds (idea by Anton).
+- **Chacha.** A bottle hides in the two balconies where a man stands smoking. Drink it and nothing can hurt you for ten seconds, and every dog you touch becomes your friend (idea by Anton).
 - **A birzha.** Men of the neighbourhood play nardi and dominoes on stools under a tin canopy with a vine.
 - **The skyline, redrawn from photos.** The Orbi City towers, Batumi Tower with its Ferris wheel and the Alphabet Tower. The Courtyard has moved, and there are more tower cranes and airliners overhead.
+- **Khinkali.** Two hide in the coin balconies, and each one is an extra life.
+- **The Georgian Bus** Giorgi came in on is parked at the start, and the khachapuri is redrawn from photos of the real Adjarian one.
 - **Small things.** A bride and groom at the Wedding House, a patrol car early on, a terracotta double-cab pickup hidden past the finish, and fewer piles of poop.
 - **Touch buttons** look like pixel-art keyboard keys, and the jump and run keys now sit in one row. Held sideways, the buttons move into panels on both sides so they no longer cover Giorgi.
 - **A favicon:** Giorgi face-on, in his cap and moustache.

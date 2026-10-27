@@ -8,13 +8,14 @@ let W = BASE_W;                             // view width, follows the window (s
 let TOP = 0;                                // extra sky above the world in tall windows
 const COLS = 232, ROWS = 14;
 const GROUND_Y = 12 * T;                    // top of the sidewalk
-const EMPTY = 0, GROUND = 1, BALC = 2, BALC_COIN = 3, BALC_KHACH = 4, USED = 5, CONCRETE = 6, PEBBLE = 7, BALC_CHACHA = 8;
+const EMPTY = 0, GROUND = 1, BALC = 2, BALC_COIN = 3, BALC_KHACH = 4, USED = 5, CONCRETE = 6, PEBBLE = 7, BALC_CHACHA = 8, BALC_KHINK = 9;
 const PHYS = { walk: 90, run: 150, acc: 520, accAir: 380, fric: 700, jumpV: 390, g: 2000, hold: 0.45, maxFall: 520 };
 const TIME_LIMIT = 300;
 const CHECKPOINT_X = 89 * T;                // respawn point: flat sidewalk, clear of pits, cars and the sewer at 99
 const FLAG_TOP = GROUND_Y - 50, FLAG_BOTTOM = GROUND_Y - 14;
 const FINISH_X = 206 * T;
 const STATUE_X = 210 * T;
+const PICKUP_X = 214 * T;   // the easter-egg pickup on the beach; close enough to fit in the narrowest finish shot
 const SEA_COL = 222;
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -44,7 +45,7 @@ const STR = {
   ru: {
     lifeUp: '+1 ЖИЗНЬ', eww: 'ФУ!', slipper: 'тапок!', goodDog: 'хороший пёс ♥', jumpedOver: 'перепрыгнул! +100',
     woof: 'ГАВ!', woofWoof: 'ГАВ! ГАВ!', delivery: 'ДОСТАВКА!', tour: 'ЭКСКУРСИЯ!', scooter: 'ПОСТОРОНИСЬ!', zoom: 'ВЖУХ! +100', honk: 'БИП-БИП!', order: 'ЗАКАЗ! +100',
-    beep: 'БИП! +100', khachapuri: 'ХАЧАПУРИ!', chacha: 'ЧАЧА! БЕССТРАШНЫЙ И БЕССМЕРТНЫЙ!', checkpoint: 'ЧЕКПОИНТ',
+    beep: 'БИП! +100', khachapuri: 'ХАЧАПУРИ!', khinkali: 'ХИНКАЛИ! +1 ЖИЗНЬ', chacha: 'ЧАЧА! БЕССТРАШНЫЙ И БЕССМЕРТНЫЙ!', checkpoint: 'ЧЕКПОИНТ',
     hud: ['ГИОРГИ', 'ЛАРИ', 'ВРЕМЯ', 'ЖИЗНИ'], soundOff: 'звук выкл (M)', god: 'режим бога',
     tap: 'Коснись экрана', press: 'Enter или пробел', start: ' — старт', retry: ' — заново', again: ' — ещё раз',
     title: 'СУПЕР ГИОРГИ', city: 'Б А Т У М И',
@@ -62,7 +63,7 @@ const STR = {
   en: {
     lifeUp: '+1 LIFE', eww: 'EWW!', slipper: 'slipper!', goodDog: 'good dog ♥', jumpedOver: 'jumped over! +100',
     woof: 'WOOF!', woofWoof: 'WOOF! WOOF!', delivery: 'DELIVERY!', tour: 'CITY TOUR!', scooter: 'OUTTA MY WAY!', zoom: 'ZOOM! +100', honk: 'BEEP-BEEP!', order: 'ORDER! +100',
-    beep: 'BEEP! +100', khachapuri: 'KHACHAPURI!', chacha: 'CHACHA! FEARLESS AND IMMORTAL!', checkpoint: 'CHECKPOINT',
+    beep: 'BEEP! +100', khachapuri: 'KHACHAPURI!', khinkali: 'KHINKALI! +1 LIFE', chacha: 'CHACHA! FEARLESS AND IMMORTAL!', checkpoint: 'CHECKPOINT',
     hud: ['GIORGI', 'LARI', 'TIME', 'LIVES'], soundOff: 'sound off (M)', god: 'god mode',
     tap: 'Tap the screen', press: 'Enter or Space', start: ' — start', retry: ' — try again', again: ' — play again',
     title: 'SUPER GIORGI', city: 'B A T U M I',
@@ -80,7 +81,7 @@ const STR = {
   ka: {
     lifeUp: '+1 სიცოცხლე', eww: 'ფუ!', slipper: 'ჩუსტი!', goodDog: 'კარგი ძაღლი ♥', jumpedOver: 'გადაახტი! +100',
     woof: 'ჰავ!', woofWoof: 'ჰავ! ჰავ!', delivery: 'მიწოდება!', tour: 'ექსკურსია!', scooter: 'გზა მომეცით!', zoom: 'ვჟუხ! +100', honk: 'ბიპ-ბიპ!', order: 'შეკვეთა! +100',
-    beep: 'ბიპ! +100', khachapuri: 'ხაჭაპური!', chacha: 'ჭაჭა! უშიშარი და უკვდავი!', checkpoint: 'ჩეკპოინტი',
+    beep: 'ბიპ! +100', khachapuri: 'ხაჭაპური!', khinkali: 'ხინკალი! +1 სიცოცხლე', chacha: 'ჭაჭა! უშიშარი და უკვდავი!', checkpoint: 'ჩეკპოინტი',
     hud: ['გიორგი', 'ლარი', 'დრო', 'სიცოცხლე'], soundOff: 'ხმა გამორთულია (M)', god: 'ღმერთის რეჟიმი',
     tap: 'შეეხე ეკრანს', press: 'Enter ან Space', start: ' — დაწყება', retry: ' — თავიდან', again: ' — კიდევ ერთხელ',
     title: 'სუპერ გიორგი', city: 'ბ ა თ უ მ ი',
@@ -327,6 +328,7 @@ const sfx = {
   sprout: () => tone(300, 0.3, 'triangle', 900, 0.2),
   chacha: () => arp([392, 523, 659, 784, 1047, 784, 1047, 1319], 0.06),
   power: () => arp([523, 659, 784, 1047, 1319], 0.07),
+  life: () => arp([587, 880, 740, 1175, 988, 1480], 0.08),
   hurt: () => tone(600, 0.3, 'square', 150, 0.2),
   die: () => arp([784, 659, 523, 392, 330, 262], 0.13, 0.15, 0.14),
   win: () => arp([523, 659, 784, 1047, 784, 1047, 1319], 0.12, 0.14, 0.16),
@@ -580,16 +582,30 @@ function dogSprites(coat, tag) {
 const DOGS = DOG_COATS.map(coat => DOG_TAGS.map(tag => dogSprites(coat, tag)));
 const HEART = sprite(['.H.H.', 'HHHHH', '.HHH.', '..H..'], { H: '#ff4d6d' });
 const ZZZ = sprite(['ZZZZ', '..Z.', '.Z..', 'ZZZZ'], { Z: '#ffffff' });
+// Adjarian khachapuri, after photos: a boat of pale golden crust, the ends twisted into points, molten sulguni,
+// the yolk in its white and a pat of butter.
 const KHACH = sprite([
-  'd............d',
-  'dd..........dd',
-  '.dDDDDDDDDDDd.',
-  '.DCCCCWWCCCCD.',
-  '.DCCCWYYWCCCD.',
-  '.DCCCWYYWCCCD.',
-  '.dDCCCWWCCCDd.',
-  '..ddDDDDDDdd..',
-], { D: '#d9913a', d: '#a8601c', C: '#ffe27a', W: '#fff6e0', Y: '#ffa400' });
+  '....oooooooo....',
+  '..ooLLLLLLLLoo..',
+  'ooLLDCCWWCCDLLoo',
+  'oLLDCCWyYWUuDLLo',
+  '.ooDCCWYYWUUDoo.',
+  '...oDLCCCCLDo...',
+  '....oDbDDbDo....',
+  '.....oooooo.....',
+], { o: '#a8642a', D: '#d99a4e', L: '#f0cb86', b: '#9c5a22', C: '#fff4c8', W: '#fffdf4', Y: '#ff9d14', y: '#ffc845', U: '#fff09a', u: '#e3cf6e' });
+// Khinkali (owner): a pleated dumpling with its knot on top; a hidden one in a coin balcony is an extra life.
+const KHINK = sprite([
+  '....ooo....',
+  '...okkko...',
+  '..owlklwo..',
+  '.owlwlwlwo.',
+  'owlwwlwwlwo',
+  'owlwwlwwlwo',
+  'owwwwwwwwwo',
+  '.osssssssso',
+  '..ooooooo..',
+], { o: '#9c8256', w: '#f6eedb', l: '#d6c296', k: '#cdb07a', s: '#dccaa2' });
 // A bottle of chacha (Anton's feature request): knocked out of a balcony, it bounces along like Mario's star
 // and makes Giorgi immortal for CHACHA_TIME seconds.
 const CHACHA = sprite([
@@ -990,7 +1006,7 @@ skyGrad.addColorStop(1, '#fbe3bf');
 // ---------- level ----------
 const CAR_COLORS = ['#b8352a', '#2f68a8', '#d9d9d4', '#36383d', '#6f8f3a', '#d9a62e', '#6b4c8c'];
 const PASTEL = ['#ead9b8', '#f0c9b8', '#c9dcea', '#e8c98f', '#d8e1c0', '#f2e2d2'];
-const isBalc = t => t === BALC || t === BALC_COIN || t === BALC_KHACH || t === BALC_CHACHA;
+const isBalc = t => t === BALC || t === BALC_COIN || t === BALC_KHACH || t === BALC_CHACHA || t === BALC_KHINK;
 
 // metallic paints: [body, shade, highlight]
 const PRIUS_COLORS = [
@@ -1150,7 +1166,7 @@ function buildLevel() {
   across(179, 3, 1);
   ride(191);
   stairs(197, [1, 2, 3, 4, 5, 6, 7, 8]);
-  L.cars.push(makePickup(215 * T));   // the easter egg
+  L.cars.push(makePickup(PICKUP_X));   // the easter egg
 
   // the traffic: a random ramp, so the easy ones come first — position along the street plus a tile of noise
   const RIDES = [cart, taxi, moped, scooter];
@@ -1161,6 +1177,12 @@ function buildLevel() {
     const spots = [];
     for (let x = a; x < b; x++) for (const y of [5, 8]) if (tiles[y][x] === BALC) spots.push([x, y]);
     if (spots.length) { const [x, y] = lpick(spots); tiles[y][x] = BALC_CHACHA; }
+  }
+  // two khinkali, one in each half, hidden in coin balconies: they look like any other
+  for (const [a, b] of [[0, 100], [100, 197]]) {
+    const spots = [];
+    for (let x = a; x < b; x++) for (const y of [5, 8]) if (tiles[y][x] === BALC_COIN) spots.push([x, y]);
+    if (spots.length) { const [x, y] = lpick(spots); tiles[y][x] = BALC_KHINK; }
   }
   for (const x of buddies) if (flat(x) && !L.dogs.some(d => Math.abs(d.x - x * T) < 2 * T)) dogAt(x);
   // just a few piles (owner), scattered on flat sidewalk, well apart
@@ -1315,6 +1337,8 @@ function camexArch(k, x) {
 const BULBA_FONT = {
   B: ['##.', '#.#', '##.', '#.#', '##.'], U: ['#.#', '#.#', '#.#', '#.#', '###'], L: ['#..', '#..', '#..', '#..', '###'],
   A: ['.#.', '#.#', '###', '#.#', '#.#'], N: ['#.#', '###', '###', '#.#', '#.#'], D: ['##.', '#.#', '#.#', '#.#', '##.'],
+  G: ['.##', '#..', '#.#', '#.#', '.##'], E: ['###', '#..', '##.', '#..', '###'], O: ['.#.', '#.#', '#.#', '#.#', '.#.'],
+  R: ['##.', '#.#', '##.', '#.#', '#.#'], I: ['###', '.#.', '.#.', '.#.', '###'], S: ['.##', '#..', '.#.', '..#', '##.'],
 };
 function bulbaShop(k, x) {
   const fy = GROUND_Y - FLOOR, w = 64, red = '#c8102e', deep = '#9a0b23';
@@ -1676,7 +1700,7 @@ function hitBlock(tx, ty) {
       particles.push({ kind: 'slipper', x: x + 6, y: y + 8, vx: rand(-40, 40), vy: -150, g: 700, life: 1.6 });
       addText(x + 8, y - 6, STR.slipper, '#ffb3d1');
     }
-  } else if (t === BALC_COIN || t === BALC_KHACH || t === BALC_CHACHA) {
+  } else if (t === BALC_COIN || t === BALC_KHACH || t === BALC_CHACHA || t === BALC_KHINK) {
     level.tiles[ty][tx] = USED;
     bumps.set(tx + ',' + ty, 0.15);
     if (t === BALC_COIN) {
@@ -1685,8 +1709,11 @@ function hitBlock(tx, ty) {
     } else if (t === BALC_CHACHA) {
       level.items.push({ kind: 'chacha', x: x + 5, y: y + 4, w: 6, h: 12, vx: 0, vy: 0, dir: 1, emerging: true, top: y - 12 });
       sfx.sprout();
+    } else if (t === BALC_KHINK) {
+      level.items.push({ kind: 'khink', x: x + 2, y: y + 4, w: 11, h: 9, vx: 0, vy: 0, dir: 1, emerging: true, top: y - 9 });
+      sfx.sprout();
     } else {
-      level.items.push({ kind: 'khach', x: x + 1, y: y + 4, w: 14, h: 8, vx: 0, vy: 0, dir: 1, emerging: true, top: y - 8 });
+      level.items.push({ kind: 'khach', x, y: y + 4, w: 16, h: 8, vx: 0, vy: 0, dir: 1, emerging: true, top: y - 8 });
       sfx.sprout();
     }
   } else {
@@ -1756,9 +1783,10 @@ function updateDog(d, dt) {
   if (d.mode === 'happy' || pl.dead) return;
   checkJumpOver(d);
   if (!overlap(pl, d)) return;
-  if (pl.star > 0) { befriend(d); return; }   // on chacha nobody can knock Giorgi over; every dog loves him
-  if (stomped(d)) {
+  if (stomped(d)) {   // chacha or not, landing on a dog bounces Giorgi off it
     pl.vy = input.jump ? -420 : -300;
+    befriend(d);
+  } else if (pl.star > 0) {   // on chacha nobody can knock Giorgi over; every dog loves him
     befriend(d);
   } else if (d.mode === 'sleep') {
     wake(d);
@@ -1838,6 +1866,12 @@ function updateItems(dt) {
         addText(it.x + 3, it.y - 6, STR.chacha, '#ffd23f');
         continue;
       }
+      if (it.kind === 'khink') {
+        game.lives++;
+        sfx.life();
+        addText(it.x + 5, it.y - 6, STR.khinkali, '#7dff8a');
+        continue;
+      }
       sfx.power();
       if (player.big) addScore(1000, it.x + 7, it.y - 6);
       else { grow(); addText(it.x + 7, it.y - 6, STR.khachapuri, '#ffd23f'); game.score += 1000; }
@@ -1889,7 +1923,11 @@ function updateWon(dt, go) {
   pl.vy = Math.min(pl.vy + PHYS.g * dt, PHYS.maxFall);
   moveBody(pl, dt);
   pl.anim += Math.abs(pl.vx) * dt;
+  const prev = cam.x;
   updateCamera();
+  // the camera eases on until the pickup on the beach is in the shot too (narrow screens left it out), Giorgi kept in
+  const want = Math.max(cam.x, Math.min(PICKUP_X + 54 - W, pl.x - 4, COLS * T - W));
+  cam.x = approach(prev, want, 90 * dt);
   if (game.time > 0) {
     const n = Math.min(Math.ceil(game.time), 2);
     game.time = Math.max(0, Math.ceil(game.time) - n);
@@ -2070,6 +2108,52 @@ function birzhaMan(m, x, gy, hand) {   // drawn facing left with the torso at 0.
   }
   g.restore();
 }
+// The Georgian Bus coach Giorgi came in on (owner), parked at the start of the street, whole: he sets off from beside
+// it and the camera rolls past. White, GEORGIAN BUS in red, the red brush strokes and small crosses of the company's
+// livery, three axles and the bug-eye mirror of a Tourismo. Pre-rendered once; decor, he walks in front of it.
+const BUS_X = 6;
+const BUS = (() => {
+  const c = document.createElement('canvas'); c.width = 152; c.height = 42;
+  const k = c.getContext('2d'), r = (col, x, y, w, h) => { k.fillStyle = col; k.fillRect(x, y, w, h); };
+  const white = '#f4f4f1', shade = '#d4d7da', glass = '#1d2733', shine = '#3d556c', red = '#d8141c', dark = '#2a2a2e';
+  const F = 144;                                                                   // where the nose is
+  r(white, 2, 3, F - 2, 32); r(white, 1, 5, 1, 30); r(white, 0, 8, 1, 26);         // body, the tail rounded at the top
+  r(white, F, 4, 2, 31); r(white, F + 2, 7, 1, 28);                                // and the nose
+  r(shade, 3, 2, F - 5, 1); r(shade, 0, 33, F + 3, 2);                             // roof edge, skirt
+  r(glass, 4, 6, F - 13, 13);                                                      // side windows
+  for (let x = 20; x < F - 9; x += 17) r('#56616e', x, 6, 1, 13);
+  for (let x = 8; x < F - 14; x += 17) { r(shine, x, 8, 3, 1); r(shine, x + 3, 9, 2, 1); }
+  r(glass, F - 5, 4, 7, 19); r(glass, F + 2, 8, 1, 14); r(shine, F - 3, 7, 2, 1);  // windscreen round the nose
+  r('#ffb21f', F - 4, 4, 5, 1);                                                    // destination display
+  r(glass, F - 12, 8, 5, 25); r('#56616e', F - 10, 8, 1, 25); r(shade, F - 13, 8, 1, 25);   // front door, two leaves
+  for (let x = 50; x < 112; x += 20) r(shade, x, 28, 1, 5);                        // luggage bay doors
+  r(shade, 50, 28, 62, 1);
+  r('#c8141c', 0, 22, 1, 6); r('#ffb21f', 0, 28, 1, 2);                            // tail lights
+  const font = { ...BULBA_FONT, N: ['#..#', '##.#', '#.##', '#..#', '#..#'], ' ': ['..'] };   // a 3-wide N reads as M
+  let tx = 52;
+  for (const ch of 'GEORGIAN BUS') {
+    font[ch].forEach((row, j) => [...row].forEach((q, i) => { if (q === '#') r(red, tx + i, 21 + j, 1, 1); }));
+    tx += font[ch][0].length + 1;
+  }
+  const cross = (x, y) => { r(red, x + 1, y, 1, 3); r(red, x, y + 1, 3, 1); };
+  for (let i = 0; i < 14; i++) r(red, 6 + i, 33 - i, 3, 1);                        // the sweep at the tail
+  for (let i = 0; i < 9; i++) r(red, 14 + i, 33 - i, 2, 1);
+  cross(30, 21); cross(36, 25);
+  for (let i = 0; i < 7; i++) { r(red, F - 26 + i, 21 + i, 2, 1); r(red, F - 19 - i, 21 + i, 1, 1); }   // the brush-stroke cross
+  cross(F - 24, 18);
+  const wheel = cx => {                                                            // a wheel in its arch
+    for (let y = 26; y < 42; y++) for (let x = cx - 9; x < cx + 9; x++) {
+      const d = Math.hypot(x + 0.5 - cx, y - 35.5);
+      if (d < 6) r(d < 2.5 ? '#c3c7cc' : d < 3.5 ? '#80868e' : '#1b1b1d', x, y, 1, 1);
+      else if (d < 8 && y < 35) r(dark, x, y, 1, 1);
+    }
+  };
+  wheel(26); wheel(42); wheel(F - 32);
+  r('#fff3c0', F, 28, 2, 2); r('#ff9a1f', F + 1, 26, 1, 1); r('#3a3c40', F - 5, 33, 8, 2);   // headlight, indicator, bumper
+  r(dark, F + 2, 3, 4, 1); r(dark, F + 5, 3, 1, 6); r(dark, F + 4, 8, 3, 5);       // mirror on its arm
+  return c;
+})();
+function drawBus() { if (cam.x < BUS_X + BUS.width) g.drawImage(BUS, BUS_X, GROUND_Y - BUS.height); }
 function drawBirzha() {
   const x = BIRZHA_X, gy = GROUND_Y;
   if (x + 60 < cam.x || x - 10 > cam.x + W) return;
@@ -2344,8 +2428,11 @@ function drawSedan(c) {
 // with a spoiler. The window line rises and the roof falls towards the rear, so the glass closes into a
 // small triangular quarter window.
 // Blunt rounded nose and a short flat hood, then the long windshield up to the roof peak.
-const PRIUS_TOP = x => (x < 1 ? 9 : x < 2 ? 8 : x < 9 ? 7 : x < 23 ? Math.round(7 - (x - 9) * 6 / 14) : x < 28 ? 1 : x < 41 ? Math.round(1 + (x - 27) / 4) : 5);
-const PRIUS_BELT = x => Math.round(8 - (x - 10) * 3 / 28);
+// The silhouette after a side photo of the 2010 car (owner): the hood rises from a low nose into the raked windscreen,
+// the roof peaks over the B-pillar and slides down to the spoiler, the tail is cut off nearly upright.
+const PRIUS_TOP = x => (x < 1 ? 9 : x < 2 ? 8 : x < 10 ? Math.round(8 - (x - 2) * 3 / 8) : x < 21 ? Math.round(5 - (x - 10) * 4 / 11) :
+  x < 26 ? 1 : x < 41 ? Math.round(1 + (x - 26) * 3 / 15) : 4);
+const PRIUS_BELT = x => Math.round(6.6 - (x - 12) * 1.6 / 24);
 function bigWheel(x, y) {   // 15" wheel with the aero cover
   g.fillStyle = '#1d1d21'; g.fillRect(x + 1, y, 6, 7); g.fillRect(x, y + 1, 8, 5);
   g.fillStyle = '#c3c9cf'; g.fillRect(x + 1, y + 1, 6, 5);
@@ -2446,32 +2533,36 @@ function drawPrius(c) {
     for (let x = gx + (14 - y); x < gx + (14 - y) + 4; x++) if (x >= 0 && x < 44 && y >= PRIUS_TOP(x)) g.fillRect(x, y, 1, 1);
   }
   g.fillStyle = '#2b3f52';
-  for (let x = 11; x < 40; x++) {
-    if (x === 25 || x === 33) continue;   // B- and C-pillars
-    const t = PRIUS_TOP(x) + 1, b = PRIUS_BELT(x);
+  for (let x = 11; x < 41; x++) {
+    if (x === 24 || x === 32) continue;   // B- and C-pillars
+    const t = PRIUS_TOP(x) + 1, b = x < 38 ? PRIUS_BELT(x) : t + 1;   // past the quarter window: a glimpse of the hatch
     if (b > t) g.fillRect(x, t, 1, b - t);
   }
   g.fillStyle = '#5b7690';
-  for (let x = 13; x < 19; x++) g.fillRect(x, PRIUS_TOP(x) + 2, 1, 1);
+  for (let x = 14; x < 20; x++) g.fillRect(x, PRIUS_TOP(x) + 2, 1, 1);
+  g.fillStyle = 'rgba(0,0,0,0.1)';                                // door shut lines, faint (owner)
+  g.fillRect(12, PRIUS_BELT(12), 1, 6); g.fillRect(24, PRIUS_BELT(24), 1, 13 - PRIUS_BELT(24));
+  g.fillRect(34, PRIUS_BELT(34), 1, 10 - PRIUS_BELT(34)); g.fillRect(33, 10, 1, 2);
+  g.fillStyle = 'rgba(0,0,0,0.2)';
+  g.fillRect(19, PRIUS_BELT(19) + 2, 2, 1); g.fillRect(29, PRIUS_BELT(29) + 2, 2, 1);   // door handles
   g.fillStyle = c.shade;
-  g.fillRect(25, PRIUS_BELT(25), 1, 13 - PRIUS_BELT(25)); g.fillRect(35, PRIUS_BELT(35), 1, 12 - PRIUS_BELT(35));
-  g.fillRect(19, PRIUS_BELT(19) + 2, 2, 1); g.fillRect(30, PRIUS_BELT(30) + 2, 2, 1);   // door handles
-  g.fillRect(12, 6, 2, 2);                                       // mirror
-  g.fillRect(33, PRIUS_TOP(33) - 1, 2, 1);                       // shark-fin antenna
+  g.fillRect(13, 5, 2, 2);                                       // mirror
+  g.fillRect(33, PRIUS_TOP(33) - 1, 2, 1);                       // antenna
   g.fillRect(4, 13, 37, 1);
   g.fillStyle = '#2a2c30'; g.fillRect(5, 10, 8, 1); g.fillRect(31, 10, 8, 1);   // wheel arches
   g.fillStyle = '#3a3e45'; g.fillRect(4, 14, 37, 1); g.fillRect(0, 12, 4, 2); g.fillRect(41, 12, 3, 2);
-  g.fillStyle = '#dbe9f3';                                       // big swept-back headlight along the hood
-  g.fillRect(1, 9, 6, 1); g.fillRect(0, 10, 3, 1);
-  g.fillStyle = '#8fb0c8'; g.fillRect(3, 10, 1, 1);
+  // the headlight: a sliver under the edge of the hood, fat at the nose, thinning to a point as it sweeps up and back
+  // (a dark lower edge, the lens under the chrome, so it reads on silver too)
+  g.fillStyle = '#f4f8fb'; g.fillRect(0, 9, 1, 1); g.fillRect(1, 9, 3, 1); g.fillRect(3, 8, 4, 1);
+  g.fillStyle = '#9fc0d8'; g.fillRect(0, 10, 2, 1);
+  g.fillStyle = '#3e4a56'; g.fillRect(2, 10, 2, 1); g.fillRect(4, 9, 2, 1);
   g.fillStyle = '#2a2e33'; g.fillRect(40, 5, 4, 1);              // spoiler across the hatch
-  g.fillStyle = '#e0281c'; g.fillRect(38, 6, 6, 1);              // blade tail lamp
-  g.fillStyle = '#a01810'; g.fillRect(41, 7, 3, 1); g.fillRect(42, 12, 1, 1);
-  // taxi sign on the roof
-  g.fillStyle = '#2a2e33'; g.fillRect(22, 0, 7, 1);
-  g.fillStyle = '#f5c400'; g.fillRect(22, -3, 7, 3);
-  g.fillStyle = '#fff3a0'; g.fillRect(23, -3, 5, 1);
-  g.fillStyle = '#5a4500'; g.fillRect(23, -2, 1, 1); g.fillRect(25, -2, 1, 1); g.fillRect(27, -2, 1, 1);
+  g.fillStyle = '#e0281c'; g.fillRect(41, 6, 3, 1); g.fillRect(42, 7, 2, 2);   // tail lamp running down the tail
+  g.fillStyle = '#a01810'; g.fillRect(43, 9, 1, 1); g.fillRect(42, 12, 1, 1);
+  // taxi sign on the roof, seen from the side like the rest of the car (owner): small, plain orange
+  g.fillStyle = '#2a2e33'; g.fillRect(23, 0, 2, 1);
+  g.fillStyle = '#f08a14'; g.fillRect(22, -2, 4, 2);
+  g.fillStyle = '#ffb44a'; g.fillRect(22, -2, 4, 1);
   bigWheel(5, 11); bigWheel(31, 11);
   g.restore();
 }
@@ -2674,6 +2765,7 @@ function drawWorld() {
   for (const f of level.fountains) drawFountain(f);
   drawWedding();
   drawBirzha();
+  drawBus();
   const fx = CHECKPOINT_X + 8;
   g.fillStyle = '#d9d9d9'; g.fillRect(fx, GROUND_Y - 50, 2, 50);
   drawGeorgianFlag(fx + 2, Math.round(level.flagY));
@@ -2684,7 +2776,7 @@ function drawWorld() {
   for (const p of level.pits) if (p.sewer) drawStink(p);
   drawSeaBand();
   drawSea();
-  for (const it of level.items) g.drawImage(it.kind === 'chacha' ? CHACHA : KHACH, Math.round(it.x), Math.round(it.y));
+  for (const it of level.items) g.drawImage(it.kind === 'chacha' ? CHACHA : it.kind === 'khink' ? KHINK : KHACH, Math.round(it.x), Math.round(it.y));
   drawTiles();
   for (const p of level.poops) drawPoop(p);
   for (const c of level.coins) if (!c.taken) drawCoin(c.x, c.y, c.x * 0.05);
