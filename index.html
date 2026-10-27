@@ -43,6 +43,15 @@
   body.phone #touch .mid button { width: 40px; height: 40px; }
   body.phone #touch .dpad { grid-column: 1; grid-row: 2; }
   body.phone #touch .act { grid-column: 3; grid-row: 2; align-self: end; }
+  /* Held sideways: the world in the middle (sized in resize()), ◀ ▶ in a panel on the left with pause/sound/fullscreen
+     above them, БЕГ ▲ on the right, so no button covers the street. */
+  body.touch.land #touch { top: 0; display: block; padding: 0; }
+  body.land #touch .grp { position: absolute; gap: 10px; }
+  body.land #touch button { width: var(--b); height: var(--b); }
+  body.land #touch .dpad { left: calc(12px + env(safe-area-inset-left)); bottom: calc(14px + env(safe-area-inset-bottom)); }
+  body.land #touch .act { right: calc(12px + env(safe-area-inset-right)); bottom: calc(14px + env(safe-area-inset-bottom)); }
+  body.land #touch .mid { left: calc(12px + env(safe-area-inset-left)); top: calc(12px + env(safe-area-inset-top)); gap: 6px; }
+  body.land #touch .mid button { width: 36px; height: 36px; }
 </style>
 </head>
 <body>

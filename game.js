@@ -8,7 +8,7 @@ let W = BASE_W;                             // view width, follows the window (s
 let TOP = 0;                                // extra sky above the world in tall windows
 const COLS = 232, ROWS = 14;
 const GROUND_Y = 12 * T;                    // top of the sidewalk
-const EMPTY = 0, GROUND = 1, BALC = 2, BALC_COIN = 3, BALC_KHACH = 4, USED = 5, CONCRETE = 6, PEBBLE = 7;
+const EMPTY = 0, GROUND = 1, BALC = 2, BALC_COIN = 3, BALC_KHACH = 4, USED = 5, CONCRETE = 6, PEBBLE = 7, BALC_CHACHA = 8;
 const PHYS = { walk: 90, run: 150, acc: 520, accAir: 380, fric: 700, jumpV: 390, g: 2000, hold: 0.45, maxFall: 520 };
 const TIME_LIMIT = 300;
 const CHECKPOINT_X = 89 * T;                // respawn point: flat sidewalk, clear of pits, cars and the sewer at 99
@@ -44,7 +44,7 @@ const STR = {
   ru: {
     lifeUp: '+1 ЖИЗНЬ', eww: 'ФУ!', slipper: 'тапок!', goodDog: 'хороший пёс ♥', jumpedOver: 'перепрыгнул! +100',
     woof: 'ГАВ!', woofWoof: 'ГАВ! ГАВ!', delivery: 'ДОСТАВКА!', tour: 'ЭКСКУРСИЯ!', scooter: 'ПОСТОРОНИСЬ!', zoom: 'ВЖУХ! +100', honk: 'БИП-БИП!', order: 'ЗАКАЗ! +100',
-    beep: 'БИП! +100', khachapuri: 'ХАЧАПУРИ!', checkpoint: 'ЧЕКПОИНТ',
+    beep: 'БИП! +100', khachapuri: 'ХАЧАПУРИ!', chacha: 'ЧАЧА! БЕССТРАШНЫЙ И БЕССМЕРТНЫЙ!', checkpoint: 'ЧЕКПОИНТ',
     hud: ['ГИОРГИ', 'ЛАРИ', 'ВРЕМЯ', 'ЖИЗНИ'], soundOff: 'звук выкл (M)', god: 'режим бога',
     tap: 'Коснись экрана', press: 'Enter или пробел', start: ' — старт', retry: ' — заново', again: ' — ещё раз',
     title: 'СУПЕР ГИОРГИ', city: 'Б А Т У М И',
@@ -62,7 +62,7 @@ const STR = {
   en: {
     lifeUp: '+1 LIFE', eww: 'EWW!', slipper: 'slipper!', goodDog: 'good dog ♥', jumpedOver: 'jumped over! +100',
     woof: 'WOOF!', woofWoof: 'WOOF! WOOF!', delivery: 'DELIVERY!', tour: 'CITY TOUR!', scooter: 'OUTTA MY WAY!', zoom: 'ZOOM! +100', honk: 'BEEP-BEEP!', order: 'ORDER! +100',
-    beep: 'BEEP! +100', khachapuri: 'KHACHAPURI!', checkpoint: 'CHECKPOINT',
+    beep: 'BEEP! +100', khachapuri: 'KHACHAPURI!', chacha: 'CHACHA! FEARLESS AND IMMORTAL!', checkpoint: 'CHECKPOINT',
     hud: ['GIORGI', 'LARI', 'TIME', 'LIVES'], soundOff: 'sound off (M)', god: 'god mode',
     tap: 'Tap the screen', press: 'Enter or Space', start: ' — start', retry: ' — try again', again: ' — play again',
     title: 'SUPER GIORGI', city: 'B A T U M I',
@@ -80,7 +80,7 @@ const STR = {
   ka: {
     lifeUp: '+1 სიცოცხლე', eww: 'ფუ!', slipper: 'ჩუსტი!', goodDog: 'კარგი ძაღლი ♥', jumpedOver: 'გადაახტი! +100',
     woof: 'ჰავ!', woofWoof: 'ჰავ! ჰავ!', delivery: 'მიწოდება!', tour: 'ექსკურსია!', scooter: 'გზა მომეცით!', zoom: 'ვჟუხ! +100', honk: 'ბიპ-ბიპ!', order: 'შეკვეთა! +100',
-    beep: 'ბიპ! +100', khachapuri: 'ხაჭაპური!', checkpoint: 'ჩეკპოინტი',
+    beep: 'ბიპ! +100', khachapuri: 'ხაჭაპური!', chacha: 'ჭაჭა! უშიშარი და უკვდავი!', checkpoint: 'ჩეკპოინტი',
     hud: ['გიორგი', 'ლარი', 'დრო', 'სიცოცხლე'], soundOff: 'ხმა გამორთულია (M)', god: 'ღმერთის რეჟიმი',
     tap: 'შეეხე ეკრანს', press: 'Enter ან Space', start: ' — დაწყება', retry: ' — თავიდან', again: ' — კიდევ ერთხელ',
     title: 'სუპერ გიორგი', city: 'ბ ა თ უ მ ი',
@@ -110,6 +110,7 @@ const buf = document.createElement('canvas');
 const g = buf.getContext('2d');
 let touchMode = false;
 let phone = false;                            // touch screen held upright: the phone layout (see resize)
+let land = false;                             // touch screen held sideways: the gamepad in side panels (see resize)
 const PHONE_W = 168;                          // narrowest view in the phone layout, sets how big the world gets
 const HUD_BAND = 26;                          // phone layout: strip above the world that holds the HUD
 const PAD_H = 166;                            // phone layout: least room for the gamepad under the world (css px)
@@ -118,6 +119,17 @@ const safeProbe = document.createElement('div');
 safeProbe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;left:0;top:0;' +
   'width:env(safe-area-inset-bottom,0px);height:env(safe-area-inset-top,0px)';
 document.body.appendChild(safeProbe);
+const sideProbe = document.createElement('div');
+sideProbe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;left:0;top:0;' +
+  'width:env(safe-area-inset-left,0px);height:env(safe-area-inset-right,0px)';
+document.body.appendChild(sideProbe);
+// Touch screens held sideways: the buttons would cover Giorgi on the pavement, so ◀ ▶ get a panel on the left,
+// БЕГ ▲ one on the right, and the world goes in between. Returns the width of one panel in css px.
+function sidePanel() {
+  const b = Math.round(clamp(innerHeight * 0.16, 54, 72));
+  document.body.style.setProperty('--b', b + 'px');
+  return 2 * b + 10 + 24 + Math.max(sideProbe.offsetWidth, sideProbe.offsetHeight);
+}
 
 // The game fills the whole browser window. The view keeps the world's 224px height and its width
 // follows the window (224..640 px). Windows taller than that get extra sky above the world (TOP) with
@@ -126,6 +138,8 @@ document.body.appendChild(safeProbe);
 function resize() {
   const portrait = innerHeight > innerWidth;
   phone = touchMode && portrait;
+  land = touchMode && !portrait;
+  const side = land ? sidePanel() : 0, avail = innerWidth - 2 * side;
   let fit;
   if (phone) {
     const safeTop = safeProbe.offsetHeight, safeBottom = safeProbe.offsetWidth;
@@ -135,14 +149,15 @@ function resize() {
     TOP = HUD_BAND;
   } else {
     fit = innerHeight / H;
-    W = Math.floor(innerWidth / fit);
-    if (W < 224 || W > 640) { W = clamp(W, 224, 640); fit = innerWidth / W; }
+    W = Math.floor(avail / fit);
+    if (W < 224 || W > 640) { W = clamp(W, 224, 640); fit = avail / W; }
     TOP = Math.max(0, Math.round(innerHeight / fit) - H);
   }
   document.body.classList.toggle('phone', phone);
+  document.body.classList.toggle('land', land);
   buf.width = W; buf.height = H + TOP;
   g.imageSmoothingEnabled = false;
-  const dpr = window.devicePixelRatio || 1, cssW = innerWidth, cssH = (H + TOP) * fit;
+  const dpr = window.devicePixelRatio || 1, cssW = avail, cssH = (H + TOP) * fit;
   canvas.style.width = cssW + 'px';
   canvas.style.height = cssH + 'px';
   document.body.style.setProperty('--game-h', cssH + 'px');
@@ -310,6 +325,7 @@ const sfx = {
   splash: () => { noise(0.4, 0.35); tone(220, 0.3, 'sine', 70, 0.25); },
   squish: () => { noise(0.12, 0.22); tone(170, 0.14, 'sine', 55, 0.22); },
   sprout: () => tone(300, 0.3, 'triangle', 900, 0.2),
+  chacha: () => arp([392, 523, 659, 784, 1047, 784, 1047, 1319], 0.06),
   power: () => arp([523, 659, 784, 1047, 1319], 0.07),
   hurt: () => tone(600, 0.3, 'square', 150, 0.2),
   die: () => arp([784, 659, 523, 392, 330, 262], 0.13, 0.15, 0.14),
@@ -574,6 +590,41 @@ const KHACH = sprite([
   '.dDCCCWWCCCDd.',
   '..ddDDDDDDdd..',
 ], { D: '#d9913a', d: '#a8601c', C: '#ffe27a', W: '#fff6e0', Y: '#ffa400' });
+// A bottle of chacha (Anton's feature request): knocked out of a balcony, it bounces along like Mario's star
+// and makes Giorgi immortal for CHACHA_TIME seconds.
+const CHACHA = sprite([
+  '..cc..',
+  '..cc..',
+  '..gg..',
+  '..gg..',
+  '.gwwg.',
+  'gwwwwg',
+  'gLRRLg',
+  'gLLLLg',
+  'gwwwwg',
+  'gwwwwg',
+  'gwwwwg',
+  '.gggg.',
+], { c: '#a8703a', g: '#8fbcc6', w: '#e6f4f6', L: '#f2e6c8', R: '#d8281c' });
+const CHACHA_TIME = 10;
+const SMOKER = sprite([   // the man on the chacha balcony, face-on: cap of black hair, moustache, white vest
+  '..hhhhh..',
+  '.hhhhhhh.',
+  '.sKsssKs.',
+  '.sssssss.',
+  '.sMMMMMs.',
+  '..sssss..',
+  '...sss...',
+  'ssvwwwvs.',
+  's.wwwww.s',
+  's.wwwww..',
+  's.wwwww..',
+  '..wwwww..',
+  '..ppppp..',
+  '..pp.pp..',
+  '..pp.pp..',
+  '..pp.pp..',
+], { h: '#1e1e22', s: '#e8b48a', K: '#1e1e22', M: '#1e1e22', v: '#c9c9c0', w: '#f6f6f2', p: '#3b4252' });
 
 // ---------- background layers (pre-rendered, tiled horizontally) ----------
 // Background layers must be the same chunky pixel art as the world, not smooth vector shapes blown up.
@@ -939,7 +990,7 @@ skyGrad.addColorStop(1, '#fbe3bf');
 // ---------- level ----------
 const CAR_COLORS = ['#b8352a', '#2f68a8', '#d9d9d4', '#36383d', '#6f8f3a', '#d9a62e', '#6b4c8c'];
 const PASTEL = ['#ead9b8', '#f0c9b8', '#c9dcea', '#e8c98f', '#d8e1c0', '#f2e2d2'];
-const isBalc = t => t === BALC || t === BALC_COIN || t === BALC_KHACH;
+const isBalc = t => t === BALC || t === BALC_COIN || t === BALC_KHACH || t === BALC_CHACHA;
 
 // metallic paints: [body, shade, highlight]
 const PRIUS_COLORS = [
@@ -1105,6 +1156,12 @@ function buildLevel() {
   const RIDES = [cart, taxi, moped, scooter];
   rides.map((x, i) => clamp(Math.round(i / (rides.length - 1) * 3 + lrand() * 2 - 1), 0, 3))
     .sort((a, b) => a - b).forEach((k, i) => RIDES[k](rides[i]));
+  // two bottles of chacha, one in each half of the street, in plain balconies picked at random
+  for (const [a, b] of [[0, 100], [100, 197]]) {
+    const spots = [];
+    for (let x = a; x < b; x++) for (const y of [5, 8]) if (tiles[y][x] === BALC) spots.push([x, y]);
+    if (spots.length) { const [x, y] = lpick(spots); tiles[y][x] = BALC_CHACHA; }
+  }
   for (const x of buddies) if (flat(x) && !L.dogs.some(d => Math.abs(d.x - x * T) < 2 * T)) dogAt(x);
   // just a few piles (owner), scattered on flat sidewalk, well apart
   for (let n = 0, tries = 0; n < 4 && tries < 200; tries++) {
@@ -1430,7 +1487,7 @@ function saveHi() {
   try { localStorage.setItem('mario-batumi-hi', String(game.hi)); } catch (e) { /* storage unavailable */ }
 }
 
-const makePlayer = x => ({ x, y: GROUND_Y - 15, w: 10, h: 15, vx: 0, vy: 0, big: false, face: 1, onGround: false, coyote: 0, buffer: 0, inv: 0, stun: 0, dead: false, anim: 0, prevBottom: 0 });
+const makePlayer = x => ({ x, y: GROUND_Y - 15, w: 10, h: 15, vx: 0, vy: 0, big: false, face: 1, onGround: false, coyote: 0, buffer: 0, inv: 0, star: 0, stun: 0, dead: false, anim: 0, prevBottom: 0 });
 
 function startLevel() {
   level = buildLevel();
@@ -1539,6 +1596,7 @@ function updatePlayer(dt) {
   const res = moveBody(pl, dt);
   if (res.head) hitBlock(res.head.tx, res.head.ty);
   if (pl.inv > 0) pl.inv -= dt;
+  if (pl.star > 0) pl.star -= dt;
   pl.anim += Math.abs(pl.vx) * dt;
   if (pl.y > H + 16) killPlayer(true);
   if (!pl.splashed && pl.y + pl.h > GROUND_Y + 10 && level.pits.some(p => !p.sewer && pl.x + pl.w > p.x && pl.x < p.x + p.w)) {
@@ -1581,12 +1639,12 @@ function shrink() {
   pl.x += 4; pl.w = 10; pl.y += 15; pl.h = 15;
 }
 function hurtPlayer() {
-  if (player.inv > 0 || player.dead) return;
+  if (player.inv > 0 || player.star > 0 || player.dead) return;
   if (player.big) { shrink(); player.inv = 2; sfx.hurt(); } else killPlayer(false);
 }
 function killPlayer(fell) {
   if (player.dead) return;
-  if (GOD) {
+  if (GOD || (player.star > 0 && game.time > 0)) {   // god mode, or chacha: holes and sewers toss Giorgi back up
     if (fell) { player.y = Math.min(player.y, GROUND_Y + 8); player.vy = -720; player.splashed = false; }
     if (game.time <= 0) game.time = 300;
     return;
@@ -1618,14 +1676,17 @@ function hitBlock(tx, ty) {
       particles.push({ kind: 'slipper', x: x + 6, y: y + 8, vx: rand(-40, 40), vy: -150, g: 700, life: 1.6 });
       addText(x + 8, y - 6, STR.slipper, '#ffb3d1');
     }
-  } else if (t === BALC_COIN || t === BALC_KHACH) {
+  } else if (t === BALC_COIN || t === BALC_KHACH || t === BALC_CHACHA) {
     level.tiles[ty][tx] = USED;
     bumps.set(tx + ',' + ty, 0.15);
     if (t === BALC_COIN) {
       addCoin();
       particles.push({ kind: 'coin', x: x + 4, y: y - 10, vx: 0, vy: -260, g: 900, life: 0.5 });
+    } else if (t === BALC_CHACHA) {
+      level.items.push({ kind: 'chacha', x: x + 5, y: y + 4, w: 6, h: 12, vx: 0, vy: 0, dir: 1, emerging: true, top: y - 12 });
+      sfx.sprout();
     } else {
-      level.items.push({ x: x + 1, y: y + 4, w: 14, h: 8, vx: 0, vy: 0, dir: 1, emerging: true, top: y - 8 });
+      level.items.push({ kind: 'khach', x: x + 1, y: y + 4, w: 14, h: 8, vx: 0, vy: 0, dir: 1, emerging: true, top: y - 8 });
       sfx.sprout();
     }
   } else {
@@ -1695,6 +1756,7 @@ function updateDog(d, dt) {
   if (d.mode === 'happy' || pl.dead) return;
   checkJumpOver(d);
   if (!overlap(pl, d)) return;
+  if (pl.star > 0) { befriend(d); return; }   // on chacha nobody can knock Giorgi over; every dog loves him
   if (stomped(d)) {
     pl.vy = input.jump ? -420 : -300;
     befriend(d);
@@ -1761,13 +1823,21 @@ function updateItems(dt) {
       it.y -= 24 * dt;
       if (it.y <= it.top) { it.y = it.top; it.emerging = false; }
     } else {
-      it.vx = 50 * it.dir;
+      it.vx = (it.kind === 'chacha' ? 70 : 50) * it.dir;
       it.vy = Math.min(it.vy + PHYS.g * dt, PHYS.maxFall);
       if (moveBody(it, dt).hitX) it.dir *= -1;
+      if (it.kind === 'chacha' && it.onGround) it.vy = -330;   // bounces along
       if (it.y > H) it.dead = true;
     }
     if (!it.dead && !player.dead && overlap(player, it)) {
       it.dead = true;
+      if (it.kind === 'chacha') {
+        player.star = CHACHA_TIME;
+        sfx.chacha();
+        game.score += 1000;
+        addText(it.x + 3, it.y - 6, STR.chacha, '#ffd23f');
+        continue;
+      }
       sfx.power();
       if (player.big) addScore(1000, it.x + 7, it.y - 6);
       else { grow(); addText(it.x + 7, it.y - 6, STR.khachapuri, '#ffd23f'); game.score += 1000; }
@@ -2142,7 +2212,22 @@ function drawBalcony(t, x, y, c, r) {
     g.fillStyle = '#55555c'; g.fillRect(x + 1, y + 5, 1, 5); g.fillRect(x + 13, y + 7, 1, 3);
     return;
   }
-  const h = hash(c, r), glazed = t === BALC && h % 3 === 0, bonus = t !== BALC;
+  const h = hash(c, r), glazed = t === BALC && h % 3 === 0, smoker = t === BALC_CHACHA, bonus = t !== BALC && !smoker;
+  if (smoker) {   // the chacha balcony: a man in a vest out for a smoke (owner), in the open door behind the railing
+    const puff = Math.floor(game.t * 0.8 + c) % 3 === 0, hx = x + 12, hy = puff ? y - 3 : y;
+    g.fillStyle = '#2e2620'; g.fillRect(x + 2, y - 10, 11, 21);                      // the dark doorway he stands in
+    g.drawImage(SMOKER, x + 3, y - 7);                                              // a step up, so the vest shows over the railing
+    g.fillStyle = '#e8b48a';                                                         // his right arm, bent up to the cigarette
+    if (puff) { g.fillRect(x + 11, y - 1, 1, 2); g.fillRect(x + 10, y - 3, 2, 2); }
+    else { g.fillRect(x + 11, y, 1, 2); }
+    g.fillStyle = '#f4f4ef'; g.fillRect(puff ? x + 12 : hx, hy, 2, 1);               // the cigarette
+    g.fillStyle = Math.floor(game.t * 3) % 2 ? '#ff5a2a' : '#c8241c'; g.fillRect((puff ? x + 12 : hx) + 2, hy, 1, 1);
+    g.fillStyle = 'rgba(235,235,235,0.8)';                                           // smoke curling up
+    for (const k of [0, 0.5]) {
+      const u = (game.t * 0.6 + k + c * 0.13) % 1;
+      g.fillRect(hx + 2 + Math.round(Math.sin(u * 7 + k * 5) * 1.5), hy - 2 - Math.round(u * 10), 1, 1);
+    }
+  }
   if (glazed) {   // glazed in by the owner, as one does
     g.fillStyle = '#e9e4da'; g.fillRect(x, y + 1, T, 10);
     g.fillStyle = '#8fb6cf'; g.fillRect(x + 1, y + 2, 6, 8); g.fillRect(x + 9, y + 2, 6, 8);
@@ -2453,10 +2538,23 @@ function drawPlayer() {
   const dx = Math.round(pl.x + pl.w / 2 - dw / 2), dy = Math.round(pl.y + pl.h - dh);
   if (pl.dead) {
     g.save(); g.translate(dx, dy + dh); g.scale(1, -1); g.drawImage(img, 0, 0, dw, dh); g.restore();
+  } else if (pl.star > 0) {   // on chacha: shimmering through the colours, slower when it's wearing off
+    const k = TINT.getContext('2d');
+    k.clearRect(0, 0, 12, 16);
+    k.globalCompositeOperation = 'source-over';
+    k.drawImage(img, 0, 0);
+    k.globalCompositeOperation = 'source-atop';
+    k.globalAlpha = 0.55;
+    k.fillStyle = STAR_COLORS[Math.floor(game.t * (pl.star < 2 ? 6 : 15)) % STAR_COLORS.length];
+    k.fillRect(0, 0, 12, 16);
+    k.globalAlpha = 1;
+    g.drawImage(TINT, dx, dy, dw, dh);
   } else {
     g.drawImage(img, dx, dy, dw, dh);
   }
 }
+const TINT = Object.assign(document.createElement('canvas'), { width: 12, height: 16 });
+const STAR_COLORS = ['#ff5a5a', '#ffd23f', '#7dff8a', '#7dd3ff', '#d78bff'];
 function drawFigure(cx, foot, h, dress) {
   for (let yy = 0; yy < h; yy += 3) {
     const u = yy / h;
@@ -2586,7 +2684,7 @@ function drawWorld() {
   for (const p of level.pits) if (p.sewer) drawStink(p);
   drawSeaBand();
   drawSea();
-  for (const it of level.items) g.drawImage(KHACH, Math.round(it.x), Math.round(it.y));
+  for (const it of level.items) g.drawImage(it.kind === 'chacha' ? CHACHA : KHACH, Math.round(it.x), Math.round(it.y));
   drawTiles();
   for (const p of level.poops) drawPoop(p);
   for (const c of level.coins) if (!c.taken) drawCoin(c.x, c.y, c.x * 0.05);

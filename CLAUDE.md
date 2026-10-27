@@ -44,8 +44,12 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
   (view down to `PHONE_W` = 168px wide, less zoom only if the screen is too short), and a gamepad panel
   filling the rest (at least `PAD_H`): ◀ ▶ one slidable pad with pause/sound/fullscreen above it, БЕГ and the
   yellow ▲ on the right — in one row, the same size as the others (owner). Below 224px of width the HUD switches to a compact form.
-  Narrow views put the camera at 30% instead of 42% so more of the road ahead is visible. Landscape phones
-  and desktop keep the full-window layout; nothing locks the orientation (manifest `orientation: any`).
+  Narrow views put the camera at 30% instead of 42% so more of the road ahead is visible.
+- **Touch screens held sideways get side panels** (`land`, body class `land`; owner: on both phones the buttons
+  covered Giorgi): `sidePanel()` sizes the keys (`--b`) and reserves a panel on each side — ◀ ▶ bottom-left with
+  pause/sound/fullscreen above, БЕГ ▲ bottom-right — and the world view (`avail` width) sits between them, so no
+  button lies over the street. Desktop keeps the full-window layout; nothing locks the orientation (manifest
+  `orientation: any`).
 - **Text is a blocky 5×7 bitmap font — owner's call** (`FONT`, `txt(s, x, y, {scale, color, align})`):
   uppercase only (input is uppercased), Cyrillic + Latin + Georgian + digits + a few symbols (₾ ♥ × ← → ▲);
   Georgian is drawn as Mtavruli capitals but keyed by the Mkhedruli letters, because `toUpperCase()` turns
@@ -94,6 +98,13 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
   and harmless), Prius taxis (activate when on screen, drive left, reverse on obstacles; roof works as a
   trampoline; taxis and mopeds turn back at the edge of a hole or sewer instead of driving over it — owner).
   `checkJumpOver()` awards the jump-over bonus.
+- **Chacha** (a feature request from Anton, via the owner): two plain balconies per game, one in each half of the
+  street (picked with `lrand`), hold a bottle of chacha (`BALC_CHACHA`, sprite `CHACHA`); such a balcony is given away by a
+  man in a white vest out there for a smoke (owner; a `SMOKER` sprite in a dark open doorway, standing a step up so
+  the vest clears the railing — owner found the first one blurry; `drawBalcony`, no laundry or glint on it). It bounces along like
+  Mario's star; drinking it sets `player.star` = `CHACHA_TIME` (10 s): nothing hurts Giorgi (`hurtPlayer` returns),
+  holes and sewers toss him back up as in god mode, every dog he touches is befriended, and he shimmers through
+  `STAR_COLORS` (`TINT` canvas in `drawPlayer`), slower in the last two seconds. The timer can still run out.
 - **Dogs never die and never kill — owner's rule.** No code path may remove a dog: they are befriended,
   hop over a Prius instead of being run over, and are put back on the sidewalk if they ever fall into a pit.
   A dog touching the player only knocks them back (`bowlOver`: short stun, no damage). The only thing that
