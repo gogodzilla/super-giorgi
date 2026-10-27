@@ -97,3 +97,21 @@ Made by [@gogodzilla](https://github.com/gogodzilla) in Batumi, built together w
 - **`music.mp3`** is the author's own recording, © Maxim Malets, all rights reserved ([`LICENSE-music.txt`](LICENSE-music.txt)). It isn't covered by the MIT License.
 
 A fan-made game, not affiliated with or endorsed by Nintendo, Toyota, SPAR or anyone else whose name appears in the game.
+
+## Changelog
+
+### 2026-10-27
+
+- **A new street every game.** Each new game picks which vehicles come at you, how many dogs are out, what the balconies hold and where the poop lies. The traffic still gets harder as you go. If you die, you get the same street back.
+- **New traffic.** The boulevard's electric sightseeing cart and an unhinged kid on a rental e-scooter. Priuses and mopeds come in random colours, and they turn back at holes in the pavement instead of driving over them.
+- **New ground floors.** The Belarusian Bulbaland shop and a passage into a courtyard under a Camex sign.
+- **A birzha.** Men of the neighbourhood play nardi and dominoes on stools under a tin canopy with a vine.
+- **The skyline, redrawn from photos.** The Orbi City towers, Batumi Tower with its Ferris wheel and the Alphabet Tower. The Courtyard has moved, and there are more tower cranes and airliners overhead.
+- **Small things.** A bride and groom at the Wedding House, a patrol car early on, a terracotta double-cab pickup hidden past the finish, and fewer piles of poop.
+- **Touch buttons** look like pixel-art keyboard keys, and the jump and run keys now sit in one row.
+- **A favicon:** Giorgi face-on, in his cap and moustache.
+- **`?god=1`** turns on a god mode for play-testing.
+
+### 2026-10-26
+
+- First public release as *Super Giorgi: Batumi*: the hero is Giorgi, the game speaks English, Russian and Georgian, and it's playable at [super.malets.by](https://super.malets.by).
