@@ -25,13 +25,17 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
 - Syntax check: `node --check game.js`. There is no test suite.
 - `window.__mario` exposes `game`, `player`, `level`, `cam`, `input` and `setAction(action, down)`
   for scripted play-testing from the console (e.g. teleport `player.x`, press `start`/`jump`/`right`).
-- **Demo autopilot for recording videos** (`demo/`, not deployed): serve the repo and open `demo/demo.html` (query goes on
+- **Demo autopilot for recording videos** (`demo/`; also on the site, owner: https://super.malets.by/demo/demo.html,
+  `?insta` for 9:16): serve the repo and open `demo/demo.html` (query goes on
   to the game, e.g. `?lang=en`), click once. It loads the game unchanged in a frame and injects `demo.js` into it, which
   hooks `input.pressed.clear` (called after every fixed step) and plays through `window.__mario`: every other step it
   simulates the player ~1 s ahead for ~90 input plans against predicted dogs/traffic/items/coins and follows a route
-  (coin/khachapuri/chacha balconies, items, dogs close ahead, a stop at the birzha). It runs and walks by turns to
+  (khachapuri balconies from tile `GROW_AT` = 105 only — owner: small Giorgi for most of the video —, chacha/khinkali
+  balconies, a third of the coin ones, items once they're down on the sidewalk, dogs close
+  ahead, a stop at the birzha). It runs and walks by turns to
   keep ~110 px/s on the move (`?pace=150` runs all the way), running anyway when walking can't clear a gap. Every jump
-  costs score in its plans (`JUMP_COST`), or it hops all the time. Receding-horizon plans like "wait, then go" can win
+  costs score in its plans (`JUMP_COST`, more than a coin), a short tap more (`HOP_COST`), banging a balcony off the
+  route more still (`BONK_COST`), and a car roof pays only once — owner: it hopped about like it was having a fit. Receding-horizon plans like "wait, then go" can win
   every replan and never happen, so after a second without 12px of progress only plans that act now count, and a goal
   is dropped after 1.5 s of that; stuck before a stretch a vehicle shuttles along, it quietly removes the vehicle while
   it is still parked off screen (`clearTheWay`). B toggles it; `window.__demo` in the
@@ -74,7 +78,8 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
 - **Fixed 60 Hz timestep.** `frame()` runs `update(DT)` in a loop; `input.pressed` (edge-triggered
   actions) is cleared after each step, `input.left/right/jump/run` are held states.
 - **State machine** in `game.state`: `title` → `play` → `dying` | `won` → `over`. Death rebuilds the whole
-  level via `startLevel()` (respawn at the Georgian-flag checkpoint once passed).
+  level via `startLevel()` (respawn at the Georgian-flag checkpoint once passed). The win screen fires six volleys of fireworks
+  (`game.fwN`) and stops — owner: endless bangs sounded like a stuck sound.
 - **Level is built in code**, not from a map file: `buildLevel()` calls helpers `row()` (balcony strings:
   `B` breakable, `?` coin, `K` khachapuri, `#` concrete), `stairs()`, `pit()`, `coins()`, `car()`, `dog()`,
   `taxi()`, `car()` (parked along) / `across()` (parked across, nose or boot towards the camera) with tile
@@ -109,7 +114,9 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
   rectangles), returns `hitX` and the tile bonked from below (`head`) → `hitBlock()`. Enemies and the
   khachapuri item reuse it. Stomp = falling and previous bottom above the target's top (`stomped()`).
 - **Enemies**: dogs (`sleep` → wakes into `chase` when close; `patrol`; landing on one makes it `happy`
-  and harmless), Prius taxis (activate when on screen, drive left, reverse on obstacles; roof works as a
+  and harmless), Prius taxis (activate when on screen, drive left, reverse on obstacles; honk — `honk()` — when they
+  appear, every 2–3 s while Giorgi is ahead within 10 tiles and when they turn back, owner — a held two-note sawtooth
+  horn, `horn()`, short then long, not a blip; roof works as a
   trampoline; taxis and mopeds turn back at the edge of a hole or sewer instead of driving over it — owner).
   `checkJumpOver()` awards the jump-over bonus.
 - **Khachapuri** is Adjarian, drawn after photos (owner asked to check it against the real thing): `KHACH`, a boat of
@@ -173,7 +180,9 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
   Rows parked across can hold a patrol car too, always nose-on (`across(x, n, police)` — index in the row;
   rows at 27 and 179 — owner wanted one early; a white car next to it is repainted blue in `across`): a black stripe across
   the front with a number plate, no lettering (owner), light bar.
-- **Easter egg: a terracotta double-cab pickup** (`makePickup`, `drawPickup`, kind `'pickup'` in `level.cars`) parked on the
+- **Easter egg: a terracotta double-cab pickup** (`makePickup`, `drawPickup`, kind `'pickup'` in `level.cars`; outline after
+  the owner's side photo of a Hilux, 56×20: tall blunt nose, long flat hood, flat roof, cab back dropping straight to a
+  long bed, upright tail, big wheels `PICKUP_WHEEL` under round arches) parked on the
   pebble beach past Ali & Nino (`PICKUP_X`, tile 214); at the finish the camera eases on until it is in the shot. Its bed is loaded with watermelons and mandarins.
 - **The old Wedding House** ("the pig's head", demolished 25.02.2026) stands in the gap before the stairs
   (`WEDDING`, `WEDDING_X` = tile 71). Outline traced from the owner's photo from the boulevard side (`SHELL`,
@@ -188,7 +197,7 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
   silhouette lives in `PRIUS_TOP`/`PRIUS_BELT`, redrawn after the owner's side photo of a 2010 car: the hood rising
   from a low nose into the raked windscreen, the roof peaking over the B-pillar, the tail cut off nearly upright. The
   headlight is a sliver under the hood edge sweeping up and back (light rim, dark lower edge so it shows on silver),
-  the tail lamp runs down the tail under the spoiler, door shut lines are faint (owner: not contrasting), and the
+  the tail lamp runs down the tail under the spoiler, the wheels and their arches are round (owner: not square), door shut lines are faint (owner: not contrasting), and the
   taxi sign is a small plain orange box seen from the side (4 px — a roof sign is short in profile), not turned to
   the viewer (owner). Owner asked for a blunt,
   rounded nose and no hard diagonal lines on the body (no character line, faint paint glint) — keep it that way.
@@ -223,7 +232,9 @@ every sprite, background and sound is generated in code (pixel-art string maps, 
 - **The birzha** (ბირჟა, owner: where the neighbourhood men sit and talk over games): `drawBirzha`, `BIRZHA_X` at
   tile 119, in the gap at 118–125 in front of Batumi Tower — a tin canopy with a vine and grapes, two pairs of men on
   stools face to face across little tables (owner), nardi on one, dominoes on the other, drawn like the people on
-  the cart (`birzhaMan`, `BIRZHA_MEN`). Decor only; poop is kept off it (`flat()`).
+  the cart (`birzhaMan`, `BIRZHA_MEN`). Poop is kept off it (`flat()`). Its tin roof is a ledge (owner): a rect in
+  `level.solids` with `oneWay`, which `moveBody` only lands on from above (x pass skips it, so big Giorgi, taller than
+  the roof is high, walks under it and jumps up through it). `demo.js` mirrors that.
 - **Audio** initialises on the first input (autoplay policy). On phones only touchend/pointerup count as a
   gesture, so `unlockAudio()` runs on those and on keydown/click: resumes the context, (re)starts the song,
   sets `navigator.audioSession.type = 'playback'` (iPhone silent switch). Over http(s) the song goes through
@@ -254,4 +265,5 @@ look changes noticeably. Commits use the GitHub noreply address (set in the repo
 Public at https://super.malets.by — static files on the VPS (`/var/www/super.malets.by/`, nginx vhost
 `/etc/nginx/sites-available/super.malets.by`, Let's Encrypt via certbot; see `~/dev/infra/hosts/vps.md`).
 Deploy = copy the files:
-`scp index.html game.js manifest.webmanifest music.mp3 vps:/var/www/super.malets.by/`
+`scp index.html game.js manifest.webmanifest music.mp3 vps:/var/www/super.malets.by/` and
+`scp demo/demo.html demo/demo.js vps:/var/www/super.malets.by/demo/`

@@ -25,7 +25,10 @@ const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h 
 const speedOf = (c, t) => c.kind === 'scooter' ? 195 + 45 * Math.sin(t * 2.3 + c.phase) : c.kind === 'moped' ? 140 : c.kind === 'cart' ? 70 : 110;
 
 const HORIZON = 70;          // steps planned ahead
-const JUMP_COST = 120;       // every jump has to be worth something, or he hops all the way like a rabbit
+const JUMP_COST = 320;       // every jump has to be worth something (more than a coin), or he hops all the way like a rabbit
+const HOP_COST = 150;        // and a twitchy little hop (key let go at once) more still: full jumps look calmer (owner)
+const BONK_COST = 400;       // hitting a balcony that isn't the goal
+const GROW_AT = 105;         // leave the khachapuri until this tile: small Giorgi for most of the video (owner)
 const SCENIC = [[116 * T, 126 * T]];   // walk, don't run: the birzha
 // Average speed on the move, px/s (walk is 90, run 150): Giorgi runs for a while, then walks for a while. ?pace=150
 // runs all the way.
@@ -57,16 +60,17 @@ function buildRoute(L) {
   const t = L.tiles;
   for (let x = 0; x < 200; x++) for (const y of [8, 5]) {
     const k = t[y][x];
-    if (k === BALC_COIN || k === BALC_KHACH || k === BALC_CHACHA || k === BALC_KHINK) r.push({ x, y, k });
+    // every prize balcony, but only some of the coin ones: a hop at each looks twitchy on video (owner)
+    if ((k === BALC_KHACH && x >= GROW_AT) || k === BALC_CHACHA || k === BALC_KHINK || (k === BALC_COIN && Math.random() < 0.3)) r.push({ x, y, k });
   }
   // a balcony on row 5 over a breakable one: break the one underneath first
   for (const g of r.slice()) if (g.y === 5 && t[8][g.x] === BALC) r.push({ x: g.x, y: 8, k: BALC });
-  // and one breakable balcony in most rows, for the rubble and the slippers
+  // and one breakable balcony in some rows, for the rubble and the slippers
   for (let x = 0; x < 200;) {
     if (t[8][x] === EMPTY && t[5][x] === EMPTY) { x++; continue; }
     const run = [];
     for (; x < 200 && (t[8][x] || t[5][x]); x++) if (t[8][x] === BALC) run.push(x);
-    if (run.length && Math.random() < 0.7) {
+    if (run.length && Math.random() < 0.2) {
       const bx = run[Math.floor(Math.random() * run.length)];
       if (!r.some(g => g.x === bx && g.y === 8)) r.push({ x: bx, y: 8, k: BALC });
     }
@@ -80,8 +84,9 @@ const tileDone = (L, g) => L.tiles[g.y][g.x] !== g.k;
 
 function pickGoal(m) {
   const pl = m.player, L = m.level, now = m.game.t;
-  // the khachapuri or the bottle once they're out: catch it
-  const it = L.items.find(i => !i.dead && !i.demoSkip && i.y < H && i.x > pl.x - 4 * T && i.x < pl.x + 14 * T);
+  // the khachapuri or the bottle once they're out: catch it, once it's down off the balconies (dancing about under one
+  // sliding along a row of them looks like a fit — owner)
+  const it = L.items.find(i => !i.dead && !i.demoSkip && (i.kind === 'chacha' || i.y + i.h > GROUND_Y - 2 * T) && i.y < H && i.x > pl.x - 4 * T && i.x < pl.x + 14 * T);
   if (it) return { kind: 'item', ref: it };
   if (m.game.time < 60) return { kind: 'run' };
   // a dog close ahead: jump on it first (a friend for life), or it gets in the way of everything else
@@ -120,7 +125,7 @@ function hitsSolid(b, W) {
   const x0 = Math.floor(b.x / T), x1 = Math.floor((b.x + b.w - 0.01) / T);
   const y0 = Math.floor(b.y / T), y1 = Math.floor((b.y + b.h - 0.01) / T);
   for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (solidTile(W.tiles, tx, ty)) return true;
-  return W.solids.some(r => overlap(b, r));
+  return W.solids.some(r => !r.oneWay && overlap(b, r));
 }
 function solidsNear(b, W, out) {
   out.length = 0;
@@ -135,16 +140,18 @@ function moveBody(b, W) {   // as in game.js; returns the tile bonked from below
   let head = null, hitX = false;
   b.x += b.vx * DT;
   for (const r of solidsNear(b, W, near)) {
-    if (!overlap(b, r)) continue;
+    if (r.oneWay || !overlap(b, r)) continue;
     if (b.vx > 0) b.x = r.x - b.w; else if (b.vx < 0) b.x = r.x + r.w; else continue;
     hitX = true;
   }
   if (hitX) b.vx = 0;
   b.onGround = false;
+  const bottom0 = b.y + b.h;
   b.y += b.vy * DT;
   let hitY = false, best = Infinity;
   for (const r of solidsNear(b, W, near)) {
     if (!overlap(b, r)) continue;
+    if (r.oneWay && !(b.vy > 0 && bottom0 <= r.y + 0.5)) continue;   // a ledge: land on it from above, pass it otherwise
     if (b.vy > 0) { b.y = r.y - b.h; b.onGround = true; } else if (b.vy < 0) {
       b.y = r.y + r.h;
       if (r.tx !== undefined) {
@@ -182,7 +189,7 @@ function simulate(m, W, cand, goal, run, record) {
   const coins = W.coins.map(c => ({ x: c.x, y: c.y, taken: false }));
   const items = W.items.map(i => ({ ref: i, x: i.x, y: i.y, w: i.w, h: i.h, dir: i.dir, emerging: i.emerging, top: i.top, kind: i.kind, got: false }));
   const heads = [];
-  let score = 0, t = W.t, prevHold = m.input.jump, dead = false, hitGoal = false, deadAt = 0;
+  let score = 0, t = W.t, prevHold = m.input.jump, dead = false, hitGoal = false, deadAt = 0, rise = 0;
   const x0 = p.x;
   const kill = i => { dead = true; deadAt = i; };
   for (let i = 0; i < HORIZON + 40 && !dead; i++) {
@@ -205,7 +212,8 @@ function simulate(m, W, cand, goal, run, record) {
     } else if (p.onGround) p.vx = approach(p.vx, 0, PHYS.fric * DT);
     p.coyote = p.onGround ? 0.08 : p.coyote - DT;
     p.buffer = press ? 0.12 : p.buffer - DT;
-    if (p.buffer > 0 && p.coyote > 0) { p.vy = -(PHYS.jumpV + Math.abs(p.vx) * 0.18); p.buffer = 0; p.coyote = 0; p.onGround = false; score -= JUMP_COST; }
+    if (p.buffer > 0 && p.coyote > 0) { p.vy = -(PHYS.jumpV + Math.abs(p.vx) * 0.18); p.buffer = 0; p.coyote = 0; p.onGround = false; score -= JUMP_COST; rise = 1; }
+    else if (rise && (p.vy >= 0 || !inp.hold)) { if (p.vy < 0 && rise < 10) score -= HOP_COST; rise = 0; } else if (rise) rise++;
     p.vy = Math.min(p.vy + PHYS.g * (inp.hold && p.vy < 0 ? PHYS.hold : 1) * DT, PHYS.maxFall);
     if (inp.hold && !press && p.onGround) score -= 4;   // no point keeping the key down on the ground
     p.prevBottom = p.y + p.h;
@@ -216,7 +224,8 @@ function simulate(m, W, cand, goal, run, record) {
       heads.push(head.tx * 100 + head.ty);
       const k = W.tiles[head.ty][head.tx];
       if (goal.kind === 'tile' && head.tx === goal.ref.x && head.ty === goal.ref.y) { hitGoal = true; score += 3000; }
-      else score += k === BALC_CHACHA ? 2000 : k === BALC_KHINK ? 1500 : k === BALC_KHACH ? (p.big ? 300 : 1200) : k === BALC_COIN ? 500 : k === BALC ? 60 : 0;
+      // a balcony off the route: only a prize is worth it; banging his head on the way to a dog looks like a fit (owner)
+      else score += (k === BALC_CHACHA ? 2000 : k === BALC_KHINK ? 1500 : k === BALC_KHACH ? (p.big ? 300 : head.tx < GROW_AT ? -3000 : 1200) : k === BALC_COIN ? 300 : k === BALC ? 60 : 0) - BONK_COST;
     }
     const inPit = W.pits.find(q => p.x + p.w > q.x && p.x < q.x + q.w);
     const sunk = inPit && (inPit.sewer ? p.x + p.w > inPit.x + 2 && p.x < inPit.x + inPit.w - 2 && p.y + p.h > SEWAGE_Y + 2 : p.y + p.h > GROUND_Y + 10);
@@ -268,7 +277,7 @@ function simulate(m, W, cand, goal, run, record) {
       if (!overlap(p, box)) continue;
       if (p.vy > 0 && p.prevBottom <= box.y + 6) {
         p.y = box.y - p.h; p.vy = inp.hold ? -560 : -460;
-        score += c.stomps === 0 ? 900 : c.stomps === 1 ? 250 : -100;
+        score += c.stomps === 0 ? 900 : -300;   // once on a roof is fun, bouncing on it again looks like a fit
         c.stomps++;
       } else if (p.inv <= 0 && p.star <= 0) {
         if (p.big) { score -= 40000; p.inv = 2; } else { kill(i); break; }

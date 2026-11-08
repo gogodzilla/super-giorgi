@@ -310,6 +310,25 @@ function noise(d, vol = 0.3, when = 0) {
   s.connect(gn); gn.connect(master);
   s.start(t); s.stop(t + d);
 }
+// A car horn: two buzzy sawtooth notes a third apart, held flat (not a decaying blip) and softened by a low-pass,
+// so it carries over the music
+function horn(d, when = 0, vol = 0.09) {
+  if (!actx) return;
+  const t = actx.currentTime + when;
+  const gn = actx.createGain(), lp = actx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 1800;
+  gn.gain.setValueAtTime(0.0001, t);
+  gn.gain.exponentialRampToValueAtTime(vol, t + 0.015);
+  gn.gain.setValueAtTime(vol, t + d - 0.04);
+  gn.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  gn.connect(lp); lp.connect(master);
+  for (const f of [392, 494]) {
+    const o = actx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(f, t);
+    o.connect(gn); o.start(t); o.stop(t + d + 0.02);
+  }
+}
 const arp = (notes, step, vol = 0.14, d = 0.09) => notes.forEach((f, i) => tone(f, d, 'square', null, vol, i * step));
 const sfx = {
   jump: () => tone(260, 0.16, 'square', 620, 0.16),
@@ -318,7 +337,7 @@ const sfx = {
   bump: () => tone(110, 0.08, 'triangle', 80, 0.35),
   stomp: () => tone(400, 0.1, 'square', 120, 0.2),
   bark: () => { tone(520, 0.07, 'sawtooth', 300, 0.16); tone(560, 0.08, 'sawtooth', 280, 0.16, 0.12); },
-  honk: () => { for (const w of [0, 0.24]) { tone(415, 0.18, 'square', null, 0.1, w); tone(523, 0.18, 'square', null, 0.08, w); } },
+  honk: () => { horn(0.13); horn(0.6, 0.2); },   // bip, beeeep — long and clear (owner)
   beep: () => { tone(415, 0.1, 'square', null, 0.1); tone(523, 0.1, 'square', null, 0.08); },
   scooter: () => { tone(520, 0.5, 'sawtooth', 980, 0.05); tone(990, 0.05, 'square', null, 0.06, 0.15); },
   cart: () => { tone(660, 0.08, 'triangle', null, 0.07); tone(660, 0.08, 'triangle', null, 0.07, 0.14); },
@@ -1036,7 +1055,7 @@ const newSeed = () => Math.floor(Math.random() * 2 ** 32);
 // kind: 'side' — parked along the street; 'front' / 'rear' — parked across it, nose or boot towards us.
 // police: a Georgian patrol car (white, a black stripe with POLICE along the side, light bar) instead of a plain sedan.
 // Easter egg: a terracotta pickup parked on the beach past the finish, its bed full of watermelons and mandarins.
-const makePickup = x => ({ kind: 'pickup', x, y: GROUND_Y - 20, w: 50, h: 20, face: 1, rects: [{ x, y: GROUND_Y - 12, w: 50, h: 12 }, { x: x + 18, y: GROUND_Y - 18, w: 24, h: 6 }] });
+const makePickup = x => ({ kind: 'pickup', x, y: GROUND_Y - 20, w: 56, h: 20, face: 1, rects: [{ x, y: GROUND_Y - 13, w: 56, h: 13 }, { x: x + 20, y: GROUND_Y - 18, w: 22, h: 5 }] });
 function makeCar(x, i, kind = 'side', police = false) {
   const y = GROUND_Y - 20, color = police ? '#f2f2ee' : CAR_COLORS[(i * 3 + 1) % CAR_COLORS.length], phase = i * 0.37;
   if (kind === 'side') return { kind, x, y, w: 46, h: 20, color, phase, police, face: hash(x, 7) % 2 ? 1 : -1, rects: [{ x, y: y + 9, w: 46, h: 11 }, { x: x + 8, y: y + 2, w: 30, h: 7 }] };
@@ -1193,6 +1212,9 @@ function buildLevel() {
 
   buildBuildings(L);
   for (const c of L.cars) L.solids.push(...c.rects);
+  // the birzha's tin roof is a ledge (owner): land on it from above, walk and jump up through it from below —
+  // it hangs lower than big Giorgi is tall
+  L.solids.push({ x: BIRZHA_X - 2, y: GROUND_Y - 31, w: 58, h: 3, oneWay: true });
   return L;
 }
 
@@ -1560,21 +1582,24 @@ function solidsNear(b) {
   for (const r of level.solids) if (overlap(b, r)) out.push(r);
   return out;
 }
-// Moves along x then y, resolving against tiles and parked cars. `head` is the tile bonked from below.
+// Moves along x then y, resolving against tiles and parked cars (and ledges, `oneWay`, from above only). `head` is
+// the tile bonked from below.
 function moveBody(b, dt) {
   const res = { hitX: false, head: null };
   b.x += b.vx * dt;
   for (const r of solidsNear(b)) {
-    if (!overlap(b, r)) continue;
+    if (r.oneWay || !overlap(b, r)) continue;
     if (b.vx > 0) b.x = r.x - b.w; else if (b.vx < 0) b.x = r.x + r.w; else continue;
     res.hitX = true;
   }
   if (res.hitX) b.vx = 0;
   b.onGround = false;
+  const bottom0 = b.y + b.h;
   b.y += b.vy * dt;
   let hitY = false, best = Infinity;
   for (const r of solidsNear(b)) {
     if (!overlap(b, r)) continue;
+    if (r.oneWay && !(b.vy > 0 && bottom0 <= r.y + 0.5)) continue;   // a ledge: land on it from above, pass it otherwise
     if (b.vy > 0) { b.y = r.y - b.h; b.onGround = true; } else if (b.vy < 0) {
       b.y = r.y + r.h;
       if (r.tx !== undefined) {
@@ -1655,7 +1680,7 @@ function grow() {
   const pl = player;
   pl.big = true;
   pl.x -= 4; pl.w = 18; pl.y -= 15; pl.h = 30;
-  if (solidsNear(pl).some(r => overlap(pl, r))) pl.x += 4;
+  if (solidsNear(pl).some(r => !r.oneWay && overlap(pl, r))) pl.x += 4;
 }
 function shrink() {
   const pl = player;
@@ -1813,6 +1838,11 @@ function wake(d) {
   addText(d.x + d.w / 2, d.y - 8, STR.woof);
   sfx.bark();
 }
+function honk(c) {
+  c.honkT = rand(1.6, 2.8);
+  sfx.honk();
+  addText(c.x + c.w / 2, c.y - 10, STR.honk, '#ffe27a');
+}
 function updateTaxi(c, dt) {
   if (!c.active) {
     if (c.x >= cam.x + W + 8) return;
@@ -1820,7 +1850,13 @@ function updateTaxi(c, dt) {
     if (c.kind === 'moped') { sfx.moped(); addText(c.x + c.w / 2, c.y - 10, STR.delivery, '#7fd6ff'); }
     else if (c.kind === 'scooter') { sfx.scooter(); addText(c.x + c.w / 2, c.y - 10, STR.scooter, '#ff9ad0'); }
     else if (c.kind === 'cart') { sfx.cart(); addText(c.x + c.w / 2, c.y - 10, STR.tour, '#9fe8b0'); }
-    else { sfx.honk(); addText(c.x + c.w / 2, c.y - 10, STR.honk, '#ffe27a'); }
+    else { honk(c); }
+  }
+  // a Prius keeps leaning on the horn (owner): every second or two while Giorgi is ahead of it, and when it turns back
+  if (c.kind === 'prius' && !player.dead) {
+    const ahead = (player.x + player.w / 2 - (c.x + c.w / 2)) * c.dir;
+    c.honkT -= dt;
+    if (ahead > 0 && ahead < 10 * T && c.honkT <= 0) honk(c);
   }
   const front = c.dir < 0 ? c.x - 2 : c.x + c.w + 2;   // turn back at the edge of a hole instead of bridging it
   if (c.y + c.h >= GROUND_Y - 1 && level.pits.some(p => front > p.x && front < p.x + p.w)) c.dir *= -1;
@@ -1828,7 +1864,7 @@ function updateTaxi(c, dt) {
   c.vx = speed * c.dir;
   if (c.kind === 'scooter' && c.onGround && Math.random() < dt * 0.9) c.vy = -290;   // hops for no reason
   c.vy = Math.min(c.vy + PHYS.g * dt, PHYS.maxFall);
-  if (moveBody(c, dt).hitX) c.dir *= -1;
+  if (moveBody(c, dt).hitX) { c.dir *= -1; if (c.kind === 'prius' && c.honkT < 0.6) honk(c); }
   if (c.y > H + 20 || c.x < cam.x - 500 || c.x > cam.x + W + 500) { c.dead = true; return; }
   if (player.dead) return;
   const box = { x: c.x + 1, y: c.y + 2, w: c.w - 2, h: c.h - 2 };
@@ -1905,7 +1941,7 @@ function updateFx(dt) {
 function win() {
   game.state = 'won';
   game.winDone = false;
-  game.fw = 0;
+  game.fw = 0; game.fwN = 0;
   musicStop();
   sfx.win();
 }
@@ -1926,7 +1962,7 @@ function updateWon(dt, go) {
   const prev = cam.x;
   updateCamera();
   // the camera eases on until the pickup on the beach is in the shot too (narrow screens left it out), Giorgi kept in
-  const want = Math.max(cam.x, Math.min(PICKUP_X + 54 - W, pl.x - 4, COLS * T - W));
+  const want = Math.max(cam.x, Math.min(PICKUP_X + PICKUP_W + 4 - W, pl.x - 4, COLS * T - W));
   cam.x = approach(prev, want, 90 * dt);
   if (game.time > 0) {
     const n = Math.min(Math.ceil(game.time), 2);
@@ -1938,7 +1974,8 @@ function updateWon(dt, go) {
     saveHi();
   }
   game.fw -= dt;
-  if (game.fw <= 0) { game.fw = 0.6; firework(); }
+  // a few volleys and done (owner: endless popping sounded like a stuck sound)
+  if (game.fw <= 0 && game.fwN < 6) { game.fw = 0.6; game.fwN++; firework(); }
   if (game.winDone && go) newGame();
 }
 function update(dt) {
@@ -2354,31 +2391,45 @@ function drawCoin(x, y, phase) {
 // raked windshield, cabin set back, shorter boot with a red tail lamp.
 // 3-pixel-tall letters: the stripe on the patrol car is too thin for the 5x7 font
 const POLICE_WORD = [['###', '###', '#..'], ['###', '#.#', '###'], ['#..', '#..', '###'], ['#', '#', '#'], ['###', '#..', '###'], ['###', '##.', '###']];
-function drawPickup(c) {   // a double cab: nose at x=0, flipped to face right; four doors, then a short open bed
+// A double-cab pickup after the owner's side photo of a Hilux (nose at x=0, flipped to face right): a tall blunt
+// nose, a long flat hood, a raked windscreen, a flat roof over two rows of doors, the cab back dropping straight to
+// the bed rail, a long bed cut off upright at the tail, big wheels under flared arches.
+const PICKUP_W = 56;
+const PICKUP_WHEEL = ['..TTTT..', '.TLLLLT.', 'TLdLLdLT', 'TLLhhLLT', 'TLLhhLLT', 'TLdLLdLT', '.TLLLLT.', '..TTTT..'];
+function drawPickup(c) {
   g.save();
   g.translate(Math.round(c.x), Math.round(c.y));
-  if (c.face > 0) { g.translate(50, 0); g.scale(-1, 1); }
-  const body = '#c2603a', shade = '#94452a', hi = '#de8a62';
+  if (c.face > 0) { g.translate(PICKUP_W, 0); g.scale(-1, 1); }
+  const body = '#c2603a', shade = '#94452a', hi = '#de8a62', glass = '#2b3f52';
   g.fillStyle = body;
-  g.fillRect(0, 9, 32, 7); g.fillRect(1, 8, 9, 1);                             // hood and front
-  for (let r = 0; r < 7; r++) g.fillRect(12 - Math.round(r * 0.8), 2 + r, 20 + Math.round(r * 0.8), 1);   // the long cab
-  g.fillRect(32, 7, 18, 9);                                                    // bed
-  g.fillStyle = '#2b3f52';
-  for (let r = 0; r < 5; r++) g.fillRect(13 - Math.round(r * 0.8), 3 + r, 17 + Math.round(r * 0.8), 1);   // windows
-  g.fillStyle = body; g.fillRect(20, 3, 2, 5);                                 // B pillar between the two rows
+  g.fillRect(1, 7, 55, 9); g.fillRect(0, 8, 1, 7);                           // the body: nose, hood, doors, bed
+  g.fillRect(1, 6, 35, 1);                                                    // the hood rising to the windscreen, the belt
+  for (let r = 0; r < 4; r++) g.fillRect(22 - r * 2, 2 + r, 36 - (22 - r * 2), 1);   // windscreen raked back, flat roof
+  g.fillStyle = glass;
+  for (let r = 0; r < 3; r++) g.fillRect(21 - r * 2, 3 + r, 26 - (21 - r * 2), 1);   // front side window
+  g.fillRect(27, 3, 8, 3); g.fillRect(35, 4, 1, 2);                           // rear one, its corner rounded
   g.fillStyle = shade;
-  g.fillRect(21, 9, 1, 5); g.fillRect(31, 7, 1, 7);                            // door seams
-  g.fillRect(32, 7, 1, 9); g.fillRect(0, 14, 50, 2); g.fillRect(34, 7, 15, 1); // bed wall, sills
-  g.fillStyle = '#e8c9b8'; g.fillRect(17, 10, 2, 1); g.fillRect(27, 10, 2, 1); // door handles
-  g.fillStyle = hi; g.fillRect(1, 9, 30, 1); g.fillRect(33, 8, 16, 1);
-  g.fillStyle = '#3d7a2e'; g.fillRect(35, 4, 7, 4); g.fillRect(36, 3, 5, 1);     // the cargo: a watermelon
-  g.fillStyle = '#8fc85a'; g.fillRect(37, 4, 1, 3); g.fillRect(39, 4, 1, 3);
+  g.fillRect(36, 7, 20, 1);                                                    // bed rail
+  g.fillRect(27, 7, 1, 7); g.fillRect(36, 8, 1, 6);                            // door shut lines
+  g.fillRect(1, 14, 54, 2);                                                    // sills and the lower body
+  g.fillRect(14, 6, 1, 1); g.fillRect(15, 6, 2, 2);                            // mirror
+  g.fillStyle = hi; g.fillRect(2, 7, 12, 1); g.fillRect(37, 8, 18, 1);   // glints
+  g.fillStyle = '#e8c9b8'; g.fillRect(23, 9, 2, 1); g.fillRect(33, 9, 2, 1);   // door handles
+  g.fillStyle = '#3d7a2e'; g.fillRect(40, 3, 7, 4); g.fillRect(41, 2, 5, 1);    // the cargo: a watermelon
+  g.fillStyle = '#8fc85a'; g.fillRect(42, 3, 1, 3); g.fillRect(44, 3, 1, 3);
   g.fillStyle = '#f08a1a';                                                     // and mandarins
-  for (const [mx, my] of [[43, 5], [45, 6], [44, 4], [46, 5], [34, 6]]) g.fillRect(mx, my, 2, 2);
-  g.fillStyle = '#f3efcf'; g.fillRect(0, 10, 2, 2);                            // headlight
-  g.fillStyle = '#d02a20'; g.fillRect(48, 9, 2, 2);                            // tail lamp
-  g.fillStyle = '#3a3a40'; g.fillRect(0, 13, 3, 3); g.fillRect(47, 13, 3, 3);  // bumpers
-  wheel(5, 14); wheel(38, 14);
+  for (const [mx, my] of [[48, 5], [50, 5], [49, 3], [52, 5], [38, 5]]) g.fillRect(mx, my, 2, 2);
+  g.fillStyle = '#f3efcf'; g.fillRect(0, 8, 5, 1); g.fillRect(1, 9, 2, 1);     // headlight sweeping back
+  g.fillStyle = '#3a3a40'; g.fillRect(0, 10, 2, 3);                            // grille
+  g.fillStyle = '#d02a20'; g.fillRect(54, 8, 2, 4);                            // tail lamp
+  g.fillStyle = '#3a3a40'; g.fillRect(0, 13, 3, 3); g.fillRect(53, 14, 3, 2);  // bumpers
+  g.fillStyle = '#1d1d21';                                                     // flared arches round the wheels
+  for (const wx of [5, 39]) { g.fillRect(wx + 2, 11, 6, 1); g.fillRect(wx + 1, 12, 8, 1); g.fillRect(wx, 13, 10, 3); }
+  const COL = { T: '#1d1d21', L: '#9aa1a9', d: '#5a6068', h: '#33363c' };
+  for (const wx of [6, 40]) PICKUP_WHEEL.forEach((row, j) => [...row].forEach((ch, i) => {
+    if (ch === '.') return;
+    g.fillStyle = COL[ch]; g.fillRect(wx + i, 12 + j, 1, 1);
+  }));
   g.restore();
 }
 function drawSedan(c) {
@@ -2433,12 +2484,10 @@ function drawSedan(c) {
 const PRIUS_TOP = x => (x < 1 ? 9 : x < 2 ? 8 : x < 10 ? Math.round(8 - (x - 2) * 3 / 8) : x < 21 ? Math.round(5 - (x - 10) * 4 / 11) :
   x < 26 ? 1 : x < 41 ? Math.round(1 + (x - 26) * 3 / 15) : 4);
 const PRIUS_BELT = x => Math.round(6.6 - (x - 12) * 1.6 / 24);
-function bigWheel(x, y) {   // 15" wheel with the aero cover
-  g.fillStyle = '#1d1d21'; g.fillRect(x + 1, y, 6, 7); g.fillRect(x, y + 1, 8, 5);
-  g.fillStyle = '#c3c9cf'; g.fillRect(x + 1, y + 1, 6, 5);
-  g.fillStyle = '#6a7078';
-  g.fillRect(x + 2, y + 2, 1, 1); g.fillRect(x + 5, y + 2, 1, 1); g.fillRect(x + 2, y + 4, 1, 1); g.fillRect(x + 5, y + 4, 1, 1);
-  g.fillStyle = '#3a3e45'; g.fillRect(x + 3, y + 3, 2, 1);
+function bigWheel(x, y) {   // 15" wheel with the aero cover, round (owner: the old one looked square)
+  const MAP = ['..TTTT..', '.TLLLLT.', 'TLdLLdLT', 'TLLhhLLT', 'TLdLLdLT', '.TLLLLT.', '..TTTT..'];
+  const COL = { T: '#1d1d21', L: '#c3c9cf', d: '#6a7078', h: '#3a3e45' };
+  MAP.forEach((row, j) => { for (let i = 0; i < 8; i++) if (COL[row[i]]) { g.fillStyle = COL[row[i]]; g.fillRect(x + i, y + j, 1, 1); } });
 }
 // Delivery moped, nose at x=0 (flipped when riding right): scooter with a leg shield, courier in a
 // helmet, light-blue delivery box on the rear rack. No brand logo on the box.
@@ -2549,7 +2598,8 @@ function drawPrius(c) {
   g.fillRect(13, 5, 2, 2);                                       // mirror
   g.fillRect(33, PRIUS_TOP(33) - 1, 2, 1);                       // antenna
   g.fillRect(4, 13, 37, 1);
-  g.fillStyle = '#2a2c30'; g.fillRect(5, 10, 8, 1); g.fillRect(31, 10, 8, 1);   // wheel arches
+  g.fillStyle = '#2a2c30';                                      // wheel arches, round over the round wheels
+  for (const wx of [5, 31]) { g.fillRect(wx + 1, 10, 6, 1); g.fillRect(wx, 11, 2, 1); g.fillRect(wx + 6, 11, 2, 1); }
   g.fillStyle = '#3a3e45'; g.fillRect(4, 14, 37, 1); g.fillRect(0, 12, 4, 2); g.fillRect(41, 12, 3, 2);
   // the headlight: a sliver under the edge of the hood, fat at the nose, thinning to a point as it sweeps up and back
   // (a dark lower edge, the lens under the chrome, so it reads on silver too)

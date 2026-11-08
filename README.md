@@ -17,7 +17,7 @@ English · Русский · ქართული
 
 ## What's in Batumi
 
-- **Prius taxis.** Third-generation Priuses with a taxi sign on the roof. They drive at you on the pavement, honk, and the roof makes a great trampoline.
+- **Prius taxis.** Third-generation Priuses with a taxi sign on the roof. They drive at you on the pavement leaning on the horn, and the roof makes a great trampoline.
 - **Delivery mopeds.** Couriers with a light-blue box on the rack, faster than the taxis.
 - **A sightseeing cart.** The boulevard's electric tourist cart, two benches of passengers, trundling along the pavement. The traffic gets harder as you go: the cart, then a Prius, then mopeds, then the scooter.
 - **An unhinged e-scooter.** A kid on a rental scooter, flat out, hopping off kerbs for no reason. Waits for you near the finish.
@@ -106,7 +106,7 @@ A fan-made game, not affiliated with or endorsed by Nintendo, Toyota, SPAR or an
 - **New traffic.** The boulevard's electric sightseeing cart and an unhinged kid on a rental e-scooter. Priuses and mopeds come in random colours, and they turn back at holes in the pavement instead of driving over them.
 - **New ground floors.** The Belarusian Bulbaland shop and a passage into a courtyard under a Camex sign.
 - **Chacha.** A bottle hides in the two balconies where a man stands smoking. Drink it and nothing can hurt you for ten seconds, and every dog you touch becomes your friend (idea by Anton).
-- **A birzha.** Men of the neighbourhood play nardi and dominoes on stools under a tin canopy with a vine.
+- **A birzha.** Men of the neighbourhood play nardi and dominoes on stools under a tin canopy with a vine. You can jump up onto its roof.
 - **The skyline, redrawn from photos.** The Orbi City towers, Batumi Tower with its Ferris wheel and the Alphabet Tower. The Courtyard has moved, and there are more tower cranes and airliners overhead.
 - **Khinkali.** Two hide in the coin balconies, and each one is an extra life.
 - **The Georgian Bus** Giorgi came in on is parked at the start, and the khachapuri is redrawn from photos of the real Adjarian one.
